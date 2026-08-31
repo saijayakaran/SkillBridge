@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .register-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: var(--space-8) var(--space-4);
+      padding-top: var(--space-12);
+      position: relative;
+      z-index: 1;
+    }
+
+    .register-box {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+
+    .role-opt {
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border-primary);
+      background: var(--bg-card);
+      cursor: pointer;
+      text-align: center;
+      transition: all var(--transition-base);
+      user-select: none;
+    }
+
+    .role-opt:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.05); }
+    .role-opt.selected { border-color: var(--indigo-500); background: rgba(99,102,241,0.1); }
+
+    .role-opt-icon { font-size: 28px; margin-bottom: var(--space-2); }
+    .role-opt-name { font-weight: var(--font-semibold); font-size: var(--text-sm); color: var(--text-primary); }
+    .role-opt-desc { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+
+    .role-fields { display: none; }
+    .role-fields.active { display: block; animation: slideUp 0.3s ease forwards; }
+
+    .pw-strength { height: 3px; border-radius: 3px; background: var(--border-primary); margin-top: var(--space-2); overflow: hidden; }
+    .pw-strength-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease, background 0.4s ease; width: 0; }
+  </style>
+</head>
+<body>
+  <div class="register-page">
+    <div class="register-box">
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:var(--space-8)">
+        <a href="../index.html" style="display:inline-flex;align-items:center;gap:var(--space-3);text-decoration:none;margin-bottom:var(--space-6)">
+          <div class="logo-icon">⚡</div>
+          <div class="logo-text" style="font-family:var(--font-heading);font-size:var(--text-xl);font-weight:var(--font-bold);background:linear-gradient(135deg,var(--indigo-300),var(--cyan-300));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">SkillBridge</div>
+        </a>
+        <h1 style="font-size:var(--text-3xl);font-weight:var(--font-bold);letter-spacing:-0.03em;margin-bottom:var(--space-2)">Create your account</h1>
+        <p style="color:var(--text-secondary)">Already have one? <a href="login.html">Sign in</a></p>
+      </div>
+
+      <!-- Role Selection -->
+      <div style="margin-bottom:var(--space-6)">
+        <div class="form-label" style="text-align:center;margin-bottom:var(--space-4)">I am a... <span class="required">*</span></div>
+        <div class="role-selector">
+          <div class="role-opt" data-role="student" onclick="selectRole('student')">
+            <div class="role-opt-icon">🎓</div>
+            <div class="role-opt-name">Student</div>
+            <div class="role-opt-desc">Looking for skills & opportunities</div>
+          </div>
+          <div class="role-opt" data-role="academician" onclick="selectRole('academician')">
+            <div class="role-opt-icon">🔬</div>
+            <div class="role-opt-name">Academician</div>
+            <div class="role-opt-desc">Faculty / Researcher / Professor</div>
+          </div>
+          <div class="role-opt" data-role="industry" onclick="selectRole('industry')">
+            <div class="role-opt-icon">🏢</div>
+            <div class="role-opt-name">Industry</div>
+            <div class="role-opt-desc">Company / Recruiter / HR</div>
+          </div>
+          <div class="role-opt" data-role="institution" onclick="selectRole('institution')">
+            <div class="role-opt-icon">🏛️</div>
+            <div class="role-opt-name">Institution</div>
+            <div class="role-opt-desc">College / University Admin</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <form id="reg-form" onsubmit="handleRegister(event)">
+        <input type="hidden" id="reg-role" name="role" required>
+
+        <!-- Common Fields -->
+        <div id="common-fields" style="display:none;animation:slideUp 0.3s ease forwards">
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Full Name <span class="required">*</span></label>
+              <input id="reg-name" type="text" class="form-input" placeholder="Your full name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input id="reg-phone" type="tel" class="form-input" placeholder="+91 XXXXXXXXXX">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <input id="reg-email" type="email" class="form-input" placeholder="you@example.com" required>
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Password <span class="required">*</span></label>
+              <input id="reg-password" type="password" class="form-input" placeholder="Min 6 characters" required minlength="6" oninput="checkPwStrength(this.value)">
+              <div class="pw-strength"><div id="pw-fill" class="pw-strength-fill"></div></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password <span class="required">*</span></label>
+              <input id="reg-confirm" type="password" class="form-input" placeholder="Repeat password" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Fields -->
+        <div id="fields-student" class="role-fields">
+          <div class="form-group">
+            <label class="form-label">Institution / College <span class="required">*</span></label>
+            <input id="stu-institution" type="text" class="form-input" placeholder="e.g. IIT Madras">
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Department <span class="required">*</span></label>
+              <select id="stu-department" class="form-select">
+                <option value="">Select department</option>
+                <option>Computer Science & Engineering</option>
+                <option>Information Technology</option>
+                <option>Electronics & Communication</option>
+                <option>Electrical Engineering</option>
+                <option>Mechanical Engineering</option>
+                <option>Civil Engineering</option>
+                <option>Data Science</option>
+                <option>Artificial Intelligence</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current Year</label>
+              <select id="stu-year" class="form-select">
+                <option value="">Select year</option>
+                <option>1st Year</option>
+                <option>2nd Year</option>
+                <option>3rd Year</option>
+                <option>4th Year</option>
+                <option>M.Tech / M.Sc</option>
+                <option>PhD</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Graduation Year</label>
+            <select id="stu-grad-year" class="form-select">
+              <option value="">Select year</option>
+              <option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Academician Fields -->
+        <div id="fields-academician" class="role-fields">
+          <div class="form-group">
+            <label class="form-label">Institution <span class="required">*</span></label>
+            <input id="aca-institution" type="text" class="form-input" placeholder="e.g. NIT Trichy">
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input id="aca-dept" type="text" class="form-input" placeholder="e.g. Computer Science">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Designation</label>
+              <select id="aca-designation" class="form-select">
+                <option value="">Select designation</option>
+                <option>Assistant Professor</option>
+                <option>Associate Professor</option>
+                <option>Professor</option>
+                <option>Professor & HOD</option>
+                <option>Research Scholar</option>
+                <option>Post-Doctoral Fellow</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Industry Fields -->
+        <div id="fields-industry" class="role-fields">
+          <div class="form-group">
+            <label class="form-label">Company Name <span class="required">*</span></label>
+            <input id="ind-company" type="text" class="form-input" placeholder="e.g. TechCorp Solutions">
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Industry Sector</label>
+              <select id="ind-sector" class="form-select">
+                <option value="">Select sector</option>
+                <option>Information Technology</option>
+                <option>Software Products</option>
+                <option>Banking & Finance</option>
+                <option>Healthcare & MedTech</option>
+                <option>Manufacturing</option>
+                <option>Consulting</option>
+                <option>E-Commerce</option>
+                <option>EdTech</option>
+                <option>Government / PSU</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Company Size</label>
+              <select id="ind-size" class="form-select">
+                <option value="">Select size</option>
+                <option>1–50</option><option>51–200</option><option>201–500</option>
+                <option>501–1000</option><option>1000+</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Website URL</label>
+            <input id="ind-website" type="url" class="form-input" placeholder="https://yourcompany.com">
+          </div>
+        </div>
+
+        <!-- Institution Fields -->
+        <div id="fields-institution" class="role-fields">
+          <div class="form-group">
+            <label class="form-label">Institution Name <span class="required">*</span></label>
+            <input id="ins-name" type="text" class="form-input" placeholder="e.g. IIT Bombay">
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Institution Type</label>
+              <select id="ins-type" class="form-select">
+                <option value="">Select type</option>
+                <option>IIT</option><option>NIT</option><option>IIIT</option>
+                <option>State University</option><option>Deemed University</option>
+                <option>Private College</option><option>Government College</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input id="ins-city" type="text" class="form-input" placeholder="City, State">
+            </div>
+          </div>
+        </div>
+
+        <div id="reg-error" class="form-error" style="display:none;margin-bottom:var(--space-4)"></div>
+
+        <!-- Terms -->
+        <div class="form-checkbox" style="margin-bottom:var(--space-6)">
+          <input type="checkbox" id="terms-check" required>
+          <label for="terms-check" style="font-size:var(--text-sm);color:var(--text-secondary)">
+            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+          </label>
+        </div>
+
+        <button type="submit" id="reg-btn" class="btn btn-primary btn-block btn-lg" disabled>
+          Create Account
+        </button>
+      </form>
+
+      <p style="text-align:center;margin-top:var(--space-5);font-size:var(--text-sm);color:var(--text-muted)">
+        Already have an account? <a href="login.html">Sign in →</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../js/data/mock-data.js"></script>
+  <script src="../js/modules/core-modules.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    let selectedRole = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.seedDemo();
+      // Pre-select from URL
+      const role = new URLSearchParams(window.location.search).get('role');
+      if (role) selectRole(role);
+    });
+
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('reg-role').value = role;
+
+      // Update UI
+      document.querySelectorAll('.role-opt').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`[data-role="${role}"]`)?.classList.add('selected');
+
+      // Show common fields
+      document.getElementById('common-fields').style.display = 'block';
+
+      // Show role-specific fields
+      document.querySelectorAll('.role-fields').forEach(el => el.classList.remove('active'));
+      const roleFields = document.getElementById('fields-' + role);
+      if (roleFields) roleFields.classList.add('active');
+
+      // Enable submit
+      document.getElementById('reg-btn').disabled = false;
+
+      // Set placeholder name based on role
+      const namePlaceholders = { student:'Your full name', academician:'Dr. / Prof. Name', industry:'Your name', institution:'Admin name' };
+      document.getElementById('reg-name').placeholder = namePlaceholders[role] || 'Your full name';
+    }
+
+    function checkPwStrength(pw) {
+      const fill = document.getElementById('pw-fill');
+      let score = 0;
+      if (pw.length >= 6) score++;
+      if (pw.length >= 10) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+      const pct = (score / 5) * 100;
+      fill.style.width = pct + '%';
+      fill.style.background = pct < 40 ? 'var(--rose-500)' : pct < 70 ? 'var(--amber-500)' : 'var(--emerald-500)';
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('reg-error');
+      errEl.style.display = 'none';
+
+      if (!selectedRole) {
+        errEl.textContent = 'Please select your role.';
+        errEl.style.display = 'flex';
+        return;
+      }
+
+      const pw = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      if (pw !== confirm) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.style.display = 'flex';
+        return;
+      }
+
+      const btn = document.getElementById('reg-btn');
+      btn.classList.add('loading');
+
+      const data = {
+        name:  document.getElementById('reg-name').value.trim(),
+        email: document.getElementById('reg-email').value.trim(),
+        phone: document.getElementById('reg-phone').value.trim(),
+        password: pw,
+        role: selectedRole,
+        institution: document.getElementById('stu-institution')?.value || document.getElementById('aca-institution')?.value || '',
+        department:  document.getElementById('stu-department')?.value || document.getElementById('aca-dept')?.value || '',
+        year:        document.getElementById('stu-year')?.value || '',
+        graduationYear: document.getElementById('stu-grad-year')?.value || '',
+        designation: document.getElementById('aca-designation')?.value || '',
+        company:     document.getElementById('ind-company')?.value || '',
+        industry:    document.getElementById('ind-sector')?.value || '',
+        size:        document.getElementById('ind-size')?.value || '',
+        website:     document.getElementById('ind-website')?.value || '',
+        type:        document.getElementById('ins-type')?.value || '',
+        address:     document.getElementById('ins-city')?.value || ''
+      };
+
+      setTimeout(() => {
+        const result = Auth.register(data);
+        if (!result.ok) {
+          btn.classList.remove('loading');
+          errEl.textContent = result.err;
+          errEl.style.display = 'flex';
+          return;
+        }
+        showToast('Account created! Welcome to SkillBridge!', 'success');
+        setTimeout(() => Auth.redirectDashboard(result.user.role), 800);
+      }, 700);
+    }
+  </script>
+</body>
+</html>

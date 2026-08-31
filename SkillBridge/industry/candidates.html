@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Candidates — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .candidate-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-5); }
+    .candidate-card { background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius-xl);padding:var(--space-5);transition:all var(--transition-base);cursor:pointer; }
+    .candidate-card:hover { border-color:rgba(99,102,241,0.3);transform:translateY(-3px);box-shadow:var(--shadow-lg); }
+    .candidate-avatar { width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-500),var(--cyan-500));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:var(--font-bold);color:white;flex-shrink:0; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Industry Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Overview</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="post-opportunity.html" class="nav-item"><span class="nav-icon">➕</span> Post Opportunity</a>
+        <a href="candidates.html" class="nav-item active"><span class="nav-icon">👥</span> Browse Candidates</a>
+        <a href="programs.html" class="nav-item"><span class="nav-icon">🎓</span> Programs & Events</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Browse Candidates</div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>👥 Talent Pool</h1>
+        <p class="subtitle">Browse skill-assessed students. Filter by skills, score, institution, and more.</p>
+      </div>
+
+      <!-- Filter Bar -->
+      <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-4);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);margin-bottom:var(--space-5)">
+        <div style="position:relative;flex:1;min-width:200px">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)">🔍</span>
+          <input id="search-cand" type="text" class="form-input" style="padding-left:36px" placeholder="Search by name, skill, institution…" oninput="filterCandidates()">
+        </div>
+        <select class="form-select" id="dept-filter" onchange="filterCandidates()" style="width:auto">
+          <option value="all">All Departments</option>
+          <option>Computer Science & Engineering</option>
+          <option>Information Technology</option>
+          <option>Electronics & Communication</option>
+          <option>Data Science</option>
+          <option>Artificial Intelligence</option>
+        </select>
+        <select class="form-select" id="skill-filter" onchange="filterCandidates()" style="width:auto">
+          <option value="all">Any Skill</option>
+          <option>Python</option><option>Java</option><option>React</option>
+          <option>SQL</option><option>ML/AI</option><option>DSA</option>
+        </select>
+        <select class="form-select" id="score-filter" onchange="filterCandidates()" style="width:auto">
+          <option value="0">Any Score</option>
+          <option value="80">80%+ (Advanced)</option>
+          <option value="60">60%+ (Intermediate)</option>
+          <option value="40">40%+ (Beginner)</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetCandFilters()">Reset</button>
+      </div>
+
+      <!-- Sort + Count -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
+        <div class="tabs-pills">
+          <div class="tab-pill active" onclick="sortCands('score',this)">Highest Score</div>
+          <div class="tab-pill" onclick="sortCands('name',this)">Name A–Z</div>
+          <div class="tab-pill" onclick="sortCands('recent',this)">Recently Joined</div>
+        </div>
+        <span id="cand-count" style="font-size:var(--text-sm);color:var(--text-muted)"></span>
+      </div>
+
+      <div class="candidate-grid stagger" id="cand-grid"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Candidate Detail Modal -->
+<div class="modal-overlay" id="cand-modal">
+  <div class="modal-box" style="max-width:680px;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h3 class="modal-title" id="cand-modal-name"></h3>
+      <button class="modal-close" onclick="closeModal('cand-modal')">×</button>
+    </div>
+    <div id="cand-modal-content"></div>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser, allCandidates = [], sortMode = 'score';
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('industry');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  loadCandidates();
+});
+
+function loadCandidates() {
+  const realStudents = Auth.getUsersByRole('student');
+  // Merge real + demo students
+  const demoStudent = MockData.demoUsers.find(u => u.role === 'student');
+  const all = [...realStudents];
+  if (!all.find(s => s.id === demoStudent?.id) && demoStudent) all.unshift(demoStudent);
+  allCandidates = all.filter(s => s.portfolio?.visible !== false);
+  filterCandidates();
+}
+
+function filterCandidates() {
+  const q     = document.getElementById('search-cand').value.toLowerCase();
+  const dept  = document.getElementById('dept-filter').value;
+  const skill = document.getElementById('skill-filter').value;
+  const minScore = parseInt(document.getElementById('score-filter').value);
+
+  let filtered = allCandidates.filter(s => {
+    const profile = s.skillProfile || {};
+    const score = SkillGap.overallScore(profile);
+    const matchQ = !q || s.name.toLowerCase().includes(q) || (s.institution||'').toLowerCase().includes(q) || Object.keys(profile).some(k=>k.toLowerCase().includes(q));
+    const matchDept = dept==='all' || s.department===dept;
+    const matchSkill = skill==='all' || profile[skill] !== undefined;
+    const matchScore = score >= minScore;
+    return matchQ && matchDept && matchSkill && matchScore;
+  });
+
+  if (sortMode==='score') filtered.sort((a,b)=>SkillGap.overallScore(b.skillProfile||{})-SkillGap.overallScore(a.skillProfile||{}));
+  else if (sortMode==='name') filtered.sort((a,b)=>a.name.localeCompare(b.name));
+  else filtered.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  renderCandidates(filtered);
+}
+
+function sortCands(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.tabs-pills .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCandidates();
+}
+
+function resetCandFilters() {
+  document.getElementById('search-cand').value = '';
+  document.getElementById('dept-filter').value = 'all';
+  document.getElementById('skill-filter').value = 'all';
+  document.getElementById('score-filter').value = '0';
+  filterCandidates();
+}
+
+function renderCandidates(candidates) {
+  const el = document.getElementById('cand-grid');
+  document.getElementById('cand-count').textContent = `${candidates.length} candidate${candidates.length!==1?'s':''}`;
+
+  if (!candidates.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:var(--space-12);grid-column:1/-1"><div class="empty-icon">👥</div><h3>No candidates found</h3><p>Try adjusting your filters</p></div>`;
+    return;
+  }
+
+  el.innerHTML = candidates.map(s => {
+    const profile = s.skillProfile || {};
+    const score   = SkillGap.overallScore(profile);
+    const topSkills = Object.entries(profile).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    const certCount = (s.certifications||[]).length;
+    const projCount = (s.projects||[]).length;
+
+    return `
+      <div class="candidate-card" onclick="viewCandidate('${s.id}')">
+        <div style="display:flex;gap:var(--space-4);align-items:flex-start;margin-bottom:var(--space-4)">
+          <div class="candidate-avatar">${s.avatar||s.name.charAt(0)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:var(--font-bold);font-size:var(--text-base)">${s.name}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted)">${s.year||''} · ${s.department?.split(' ')[0]||''}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted)">${s.institution||''}</div>
+          </div>
+          <div class="match-pill ${score>=70?'high':score>=50?'medium':'low'}">${score||'—'}%</div>
+        </div>
+
+        <!-- Top Skills -->
+        <div style="margin-bottom:var(--space-3)">
+          ${topSkills.length ? topSkills.map(([skill,val])=>`
+            <div style="margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+                <span style="font-size:10px;color:var(--text-muted)">${skill}</span>
+                <span style="font-size:10px;color:var(--text-muted)">${val}%</span>
+              </div>
+              <div style="height:4px;background:var(--bg-tertiary);border-radius:2px">
+                <div style="width:${val}%;height:100%;border-radius:2px;background:${val>=80?'var(--emerald-500)':val>=55?'var(--cyan-500)':'var(--amber-500)'}"></div>
+              </div>
+            </div>`).join('') : '<div style="font-size:var(--text-xs);color:var(--text-muted)">No assessments yet</div>'}
+        </div>
+
+        <!-- Stats Row -->
+        <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)">
+          <div style="font-size:var(--text-xs);color:var(--text-muted)">📁 ${projCount} project${projCount!==1?'s':''}</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted)">🏅 ${certCount} cert${certCount!==1?'s':''}</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted)">📝 ${(s.assessmentHistory||[]).length} assessed</div>
+        </div>
+
+        <!-- Career Interests -->
+        ${(s.careerInterests||[]).length ? `<div class="tags-wrap" style="margin-bottom:var(--space-4)">${s.careerInterests.slice(0,3).map(i=>`<span class="skill-tag">${i}</span>`).join('')}</div>` : ''}
+
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn btn-ghost btn-sm flex-1" onclick="event.stopPropagation();viewCandidate('${s.id}')">View Profile</button>
+          <button class="btn btn-primary btn-sm flex-1" onclick="event.stopPropagation();contactCandidate('${s.id}')">Contact</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function viewCandidate(id) {
+  const s = allCandidates.find(c => c.id === id);
+  if (!s) return;
+
+  const profile = s.skillProfile || {};
+  const score = SkillGap.overallScore(profile);
+
+  document.getElementById('cand-modal-name').textContent = s.name;
+  document.getElementById('cand-modal-content').innerHTML = `
+    <!-- Hero -->
+    <div style="display:flex;gap:var(--space-5);align-items:center;padding:var(--space-5);background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(6,182,212,0.05));border-radius:var(--radius-xl);margin-bottom:var(--space-5)">
+      <div class="candidate-avatar" style="width:72px;height:72px;font-size:32px">${s.avatar||s.name.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-size:var(--text-2xl);font-weight:var(--font-bold)">${s.name}</div>
+        <div style="color:var(--text-secondary);font-size:var(--text-sm)">${s.year||''} · ${s.department||''}</div>
+        <div style="color:var(--text-secondary);font-size:var(--text-sm)">${s.institution||''}</div>
+        ${s.portfolio?.bio ? `<p style="font-size:var(--text-sm);color:var(--text-muted);margin-top:var(--space-2)">${s.portfolio.bio}</p>` : ''}
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:var(--text-4xl);font-weight:var(--font-black);font-family:var(--font-heading);color:${score>=70?'var(--emerald-400)':score>=50?'var(--cyan-400)':'var(--amber-400)'}">${score||'—'}%</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">Skill Score</div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    ${Object.keys(profile).length ? `
+    <h4 style="margin-bottom:var(--space-3)">📊 Assessed Skills</h4>
+    <div style="margin-bottom:var(--space-5)">
+      ${Object.entries(profile).sort((a,b)=>b[1]-a[1]).map(([skill,val])=>`
+        <div style="margin-bottom:var(--space-3)">
+          <div class="progress-header"><span class="progress-name">${skill}</span><span class="progress-pct">${val}%</span></div>
+          <div class="progress-track"><div class="progress-fill ${val>=80?'emerald':val>=55?'cyan':'amber'}" style="width:${val}%"></div></div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Projects -->
+    ${(s.projects||[]).length ? `
+    <h4 style="margin-bottom:var(--space-3)">💻 Projects</h4>
+    <div style="margin-bottom:var(--space-5)">
+      ${(s.projects||[]).map(p=>`
+        <div style="padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-3)">
+          <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-1)">${p.name}</div>
+          <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">${p.description||''}</p>
+          <div class="tags-wrap">${(p.tech||[]).map(t=>`<span class="skill-tag">${t}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Certifications -->
+    ${(s.certifications||[]).length ? `
+    <h4 style="margin-bottom:var(--space-3)">🏅 Certifications</h4>
+    <div class="tags-wrap" style="margin-bottom:var(--space-5)">${(s.certifications||[]).map(c=>`<span class="badge badge-emerald">${c}</span>`).join('')}</div>` : ''}
+
+    <!-- Achievements -->
+    ${(s.achievements||[]).length ? `
+    <h4 style="margin-bottom:var(--space-3)">🏆 Achievements</h4>
+    <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-5)">
+      ${(s.achievements||[]).map(a=>`<div style="padding:var(--space-2) var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:var(--text-sm)">🏆 ${a}</div>`).join('')}
+    </div>` : ''}
+
+    <!-- Action Buttons -->
+    <div style="display:flex;gap:var(--space-3)">
+      <button class="btn btn-primary flex-1" onclick="contactCandidate('${s.id}');closeModal('cand-modal')">📧 Contact Candidate</button>
+      <button class="btn btn-outline btn-sm" onclick="shortlistCandidate('${s.id}')">⭐ Shortlist</button>
+    </div>`;
+
+  openModal('cand-modal');
+}
+
+function contactCandidate(id) {
+  const s = allCandidates.find(c => c.id === id);
+  if (!s) return;
+  showToast(`Invitation sent to ${s.name} (${s.email})`, 'success');
+}
+
+function shortlistCandidate(id) {
+  const s = allCandidates.find(c => c.id === id);
+  if (!s) return;
+  showToast(`${s.name} shortlisted! They'll be notified.`, 'success');
+  // In a real app, update application status
+  const apps = (s.applications||[]).map(a => a.status==='applied' ? {...a, status:'shortlisted', updatedAt:new Date().toISOString()} : a);
+  Auth.updateUser({ id: s.id, applications: apps });
+}
+</script>
+</body>
+</html>

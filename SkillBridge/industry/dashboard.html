@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Industry Dashboard — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Industry Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Overview</span>
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="post-opportunity.html" class="nav-item"><span class="nav-icon">➕</span> Post Opportunity</a>
+        <a href="candidates.html" class="nav-item"><span class="nav-icon">👥</span> Browse Candidates</a>
+        <a href="programs.html" class="nav-item"><span class="nav-icon">🎓</span> Programs & Events</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Industry Dashboard</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="post-opportunity.html" class="btn btn-primary btn-sm">+ Post Opportunity</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+          <div>
+            <h1 id="welcome-ind">Welcome! 🏢</h1>
+            <p class="subtitle" id="company-sub">Your recruitment and collaboration hub</p>
+          </div>
+          <div style="display:flex;gap:var(--space-3)">
+            <button class="btn btn-outline btn-sm" onclick="loadSkillDemand()">✦ Industry Demand</button>
+            <a href="candidates.html" class="btn btn-glass btn-sm">👥 Find Talent</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid stagger" id="ind-stats"></div>
+
+      <!-- Main Grid -->
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-6);margin-top:var(--space-6)">
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+          <!-- Posted Opportunities -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">💼 Your Posted Opportunities</div></div>
+              <a href="post-opportunity.html" class="btn btn-primary btn-sm">+ Post New</a>
+            </div>
+            <div id="posted-opps" style="display:flex;flex-direction:column;gap:var(--space-4)"></div>
+          </div>
+
+          <!-- Recent Applicants -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">👥 Recent Applicants</div>
+              <a href="candidates.html" class="btn btn-ghost btn-sm">View All →</a>
+            </div>
+            <div id="recent-applicants" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <!-- Skill Demand Chart -->
+          <div class="card">
+            <div class="card-title mb-4">📊 Top Skill Demands</div>
+            <canvas id="demand-chart" width="320" height="280"></canvas>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-title mb-4">⚡ Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+              <a href="post-opportunity.html" class="btn btn-outline btn-sm w-full">📝 Post Internship</a>
+              <a href="post-opportunity.html?type=job" class="btn btn-outline btn-sm w-full">💼 Post Job</a>
+              <a href="programs.html" class="btn btn-outline btn-sm w-full">🎓 Create Program</a>
+              <a href="candidates.html" class="btn btn-outline btn-sm w-full">👥 Search Candidates</a>
+              <button class="btn btn-primary btn-sm w-full" onclick="loadSkillDemand()">✦ Check Skill Demand</button>
+            </div>
+          </div>
+
+          <!-- AI Demand Insights -->
+          <div class="card card-gradient-indigo" id="demand-card" style="display:none">
+            <div class="ai-badge mb-3">✦ Claude AI</div>
+            <div class="card-title mb-3">Industry Insights</div>
+            <div id="demand-insights"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('industry');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  document.getElementById('welcome-ind').textContent = `Welcome, ${currentUser.name}! 🏢`;
+  document.getElementById('company-sub').textContent = currentUser.company || 'Your company on SkillBridge';
+  renderStats();
+  renderPostedOpps();
+  renderApplicants();
+  renderDemandChart();
+});
+
+function renderStats() {
+  const myOpps = MockData.opportunities.filter(o => o.companyId === currentUser.id);
+  const allStudents = Auth.getUsersByRole('student');
+  const applicants = allStudents.flatMap(s => (s.applications||[]).filter(a => myOpps.some(o=>o.id===a.opportunityId)));
+  const shortlisted = applicants.filter(a => a.status==='shortlisted'||a.status==='interview');
+
+  document.getElementById('ind-stats').innerHTML = `
+    <div class="stat-card indigo"><div class="stat-value">${myOpps.length}</div><div class="stat-label">Active Postings</div><div class="stat-change positive">+2 this week</div></div>
+    <div class="stat-card cyan"><div class="stat-value">${applicants.length}</div><div class="stat-label">Total Applicants</div><div class="stat-change positive">Across all postings</div></div>
+    <div class="stat-card amber"><div class="stat-value">${shortlisted.length}</div><div class="stat-label">Shortlisted</div><div class="stat-change neutral">Ready for review</div></div>
+    <div class="stat-card emerald"><div class="stat-value">${allStudents.length}</div><div class="stat-label">Student Pool</div><div class="stat-change positive">Skill-matched</div></div>`;
+}
+
+function renderPostedOpps() {
+  const el = document.getElementById('posted-opps');
+  // Show all opportunities (in a real app, filter by companyId)
+  const myOpps = MockData.opportunities.slice(0, 4);
+
+  if (!myOpps.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:var(--space-10)"><div class="empty-icon">💼</div><p>No opportunities posted yet</p><a href="post-opportunity.html" class="btn btn-primary mt-4">Post First Opportunity</a></div>`;
+    return;
+  }
+
+  const allStudents = Auth.getUsersByRole('student');
+  el.innerHTML = myOpps.map(o => {
+    const applicantCount = allStudents.flatMap(s=>(s.applications||[]).filter(a=>a.opportunityId===o.id)).length;
+    return `
+      <div style="padding:var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1px solid var(--border-primary)">
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3)">
+          <div style="font-size:28px">${o.companyLogo}</div>
+          <div style="flex:1">
+            <div style="font-weight:var(--font-semibold)">${o.title}</div>
+            <div style="font-size:var(--text-sm);color:var(--text-muted)">${o.company} · ${o.location}</div>
+          </div>
+          <div style="text-align:right">
+            <span class="badge badge-${o.type==='internship'?'indigo':'emerald'}">${o.type}</span>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px">${App.timeUntil(o.deadline)}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:var(--space-4)">
+            <span style="font-size:var(--text-sm);color:var(--text-secondary)">👥 ${applicantCount} applicants</span>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary)">📍 ${o.openings} openings</span>
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            <a href="candidates.html" class="btn btn-ghost btn-xs">View Applicants</a>
+            <button class="btn btn-outline btn-xs" onclick="showToast('Edit feature coming soon','info')">Edit</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderApplicants() {
+  const el = document.getElementById('recent-applicants');
+  const students = Auth.getUsersByRole('student').filter(s => (s.applications||[]).length);
+  const allStudents = students.slice(0, 5);
+
+  if (!allStudents.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-icon">👥</div><p>No applicants yet. Post opportunities to attract talent.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = allStudents.map(s => {
+    const profile = s.skillProfile || {};
+    const score = SkillGap.overallScore(profile);
+    const latestApp = (s.applications||[]).sort((a,b)=>new Date(b.appliedAt)-new Date(a.appliedAt))[0];
+    const appliedOpp = latestApp ? MockData.opportunities.find(o=>o.id===latestApp?.opportunityId) : null;
+    return `
+      <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-500),var(--cyan-500));display:flex;align-items:center;justify-content:center;font-weight:var(--font-bold);color:white;flex-shrink:0">${s.avatar||s.name.charAt(0)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">${s.name}</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);">${s.department||''} · ${s.institution||''}</div>
+          ${appliedOpp ? `<div style="font-size:var(--text-xs);color:var(--text-muted)">Applied: ${appliedOpp.title}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="match-pill ${score>=70?'high':score>=50?'medium':'low'}">${score}%</div>
+          <a href="candidates.html" class="btn btn-ghost btn-xs mt-1">View</a>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderDemandChart() {
+  const skills = MockData.skillDemand.slice(0, 8);
+  Charts.drawHorizBar('demand-chart', skills.map(s=>s.skill), skills.map(s=>s.demand), ['#6366f1','#06b6d4','#f59e0b','#10b981','#8b5cf6','#f43f5e','#22d3ee','#fbbf24']);
+}
+
+async function loadSkillDemand() {
+  const sector = currentUser.industry || 'technology';
+  const result = await AIService.run(() => AIService.getSkillDemand(sector, 'India'));
+  if (!result) return;
+
+  const card = document.getElementById('demand-card');
+  card.style.display = 'block';
+
+  document.getElementById('demand-insights').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+      ${(result.insights||[]).slice(0,3).map(i=>`<div style="font-size:var(--text-xs);color:var(--text-secondary);padding:var(--space-2);background:rgba(255,255,255,0.05);border-radius:var(--radius-md)">${i}</div>`).join('')}
+    </div>
+    ${result.emergingSkills?.length ? `
+    <div style="margin-top:var(--space-3)">
+      <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-2)">Emerging Skills:</div>
+      <div class="tags-wrap">${result.emergingSkills.map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+    </div>` : ''}`;
+  showToast('Industry insights loaded!', 'success');
+}
+</script>
+</body>
+</html>

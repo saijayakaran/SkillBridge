@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Skill Assessment — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .skill-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-3); }
+    .skill-card { padding:var(--space-4);border-radius:var(--radius-lg);border:2px solid var(--border-primary);background:var(--bg-card);cursor:pointer;text-align:center;transition:all var(--transition-base);user-select:none; }
+    .skill-card:hover { border-color:rgba(99,102,241,0.5);transform:translateY(-2px); }
+    .skill-card.selected { border-color:var(--indigo-500);background:rgba(99,102,241,0.1); }
+
+    /* Role cards — separate class to avoid skill-card selection conflicts */
+    .role-card { padding:var(--space-4);border-radius:var(--radius-lg);border:2px solid var(--border-primary);background:var(--bg-card);cursor:pointer;text-align:center;transition:all var(--transition-base);user-select:none; }
+    .role-card:hover { border-color:rgba(99,102,241,0.5);transform:translateY(-2px);background:var(--bg-card-hover); }
+    .role-card.selected { border-color:var(--indigo-500);background:rgba(99,102,241,0.12);box-shadow:0 0 0 3px rgba(99,102,241,0.15); }
+    .skill-card-icon { font-size:28px;margin-bottom:var(--space-2); }
+    .skill-card-name { font-size:var(--text-sm);font-weight:var(--font-semibold); }
+
+    .level-btn { padding:var(--space-3) var(--space-5);border-radius:var(--radius-md);border:2px solid var(--border-primary);background:var(--bg-card);cursor:pointer;font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-secondary);transition:all var(--transition-base);font-family:var(--font-body); }
+    .level-btn:hover { border-color:rgba(99,102,241,0.5);color:var(--indigo-400); }
+    .level-btn.selected { border-color:var(--indigo-500);background:rgba(99,102,241,0.15);color:var(--indigo-300); }
+
+    .question-card { padding:var(--space-6);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);margin-bottom:var(--space-4); }
+    .option-btn { width:100%;text-align:left;padding:var(--space-4);border-radius:var(--radius-md);border:2px solid var(--border-primary);background:transparent;color:var(--text-secondary);cursor:pointer;font-family:var(--font-body);font-size:var(--text-sm);transition:all var(--transition-base);margin-bottom:var(--space-2);line-height:var(--leading-relaxed); }
+    .option-btn:hover { border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.05);color:var(--text-primary); }
+    .option-btn.selected { border-color:var(--indigo-500);background:rgba(99,102,241,0.1);color:var(--indigo-300); }
+    .option-btn.correct  { border-color:var(--emerald-500);background:rgba(16,185,129,0.1);color:var(--emerald-300); }
+    .option-btn.wrong    { border-color:var(--rose-500);background:rgba(244,63,94,0.1);color:var(--rose-400); }
+
+    .step-phase { display:none; }
+    .step-phase.active { display:block; animation:pageEnter 0.4s ease forwards; }
+
+    .result-ring { position:relative;display:inline-flex;align-items:center;justify-content:center; }
+    .result-center { position:absolute;text-align:center; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Student Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item active"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item"><span class="nav-icon">🏅</span> My Portfolio</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">AI Skill Assessment</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <div class="ai-badge">✦ Powered by Claude AI</div>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <!-- Phase 1: Select Role + Skill -->
+      <div class="step-phase active" id="phase-select">
+        <div class="page-header">
+          <h1>📝 Skill Assessment</h1>
+          <p class="subtitle">Choose your target career role — questions will be tailored to that role's real-world requirements.</p>
+        </div>
+
+        <!-- Past Results -->
+        <div id="past-results-section" style="display:none;margin-bottom:var(--space-8)">
+          <div class="section-header"><div class="section-title">⏱ Past Assessment Results</div></div>
+          <div id="past-results-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--space-4)"></div>
+        </div>
+
+        <!-- Step 0: Role Selection -->
+        <div class="card mb-6">
+          <div class="card-title mb-1">Step 1 — Select Your Target Career Role</div>
+          <div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-5)">Questions will be scenario-based and relevant to this role</div>
+          <div id="role-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--space-3)">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Step 1: Skill Category (shown after role selected) -->
+        <div class="card mb-6" id="skill-section" style="display:none;animation:slideUp 0.3s ease forwards">
+          <div>
+            <div class="card-title mb-1">Step 2 — Select Skill to Assess</div>
+            <div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-4)">
+              Showing skills relevant to <strong id="role-context-label" style="color:var(--indigo-300)"></strong>
+              <button class="btn btn-ghost btn-xs" style="margin-left:var(--space-2)" onclick="showAllSkills()">Show all</button>
+            </div>
+          </div>
+
+          <div class="tabs-pills" style="margin-bottom:var(--space-5)" id="cat-tabs">
+            <div class="tab-pill active" onclick="filterCategory('all',this)">All</div>
+            <div class="tab-pill" onclick="filterCategory('technical',this)">Technical</div>
+            <div class="tab-pill" onclick="filterCategory('aptitude',this)">Aptitude</div>
+            <div class="tab-pill" onclick="filterCategory('soft',this)">Soft Skills</div>
+          </div>
+
+          <div class="skill-grid" id="skill-grid">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Level Selection -->
+        <div class="card mb-6" id="level-section" style="display:none;animation:slideUp 0.3s ease forwards">
+          <div class="card-title mb-4">Step 3 — Select Difficulty Level</div>
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+            <button class="level-btn" data-level="beginner" onclick="selectLevel('beginner',this)">
+              🌱 Beginner<br><span style="font-size:var(--text-xs);font-weight:var(--font-normal);color:var(--text-muted)">Fundamentals &amp; Basics</span>
+            </button>
+            <button class="level-btn" data-level="intermediate" onclick="selectLevel('intermediate',this)">
+              ⚡ Intermediate<br><span style="font-size:var(--text-xs);font-weight:var(--font-normal);color:var(--text-muted)">Real-world scenarios</span>
+            </button>
+            <button class="level-btn" data-level="advanced" onclick="selectLevel('advanced',this)">
+              🚀 Advanced<br><span style="font-size:var(--text-xs);font-weight:var(--font-normal);color:var(--text-muted)">Complex &amp; edge cases</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Start Button -->
+        <div id="start-section" style="display:none;animation:slideUp 0.3s ease forwards">
+          <div class="card card-gradient-indigo">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+              <div>
+                <div class="ai-badge mb-2">✦ Role-Tailored by Claude AI</div>
+                <div style="font-weight:var(--font-bold);font-size:var(--text-lg);margin-bottom:var(--space-1)">
+                  <span id="start-skill-label"></span> for <span id="start-role-label" style="color:var(--indigo-300)"></span>
+                </div>
+                <div style="color:var(--text-secondary);font-size:var(--text-sm)">
+                  10 role-specific questions at <span id="start-level-label"></span> level
+                </div>
+              </div>
+              <button class="btn btn-primary btn-lg" id="start-btn" onclick="startAssessment()">
+                🚀 Generate &amp; Start
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 2: Questions -->
+      <div class="step-phase" id="phase-quiz">
+        <!-- Progress Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6)">
+          <div>
+            <h2 id="quiz-title">Assessment</h2>
+            <div style="color:var(--text-muted);font-size:var(--text-sm)">Answer all questions. You can review before submitting.</div>
+          </div>
+          <div style="text-align:right">
+            <div id="q-progress" style="font-size:var(--text-2xl);font-weight:var(--font-bold);font-family:var(--font-heading)">1/10</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted)">Question</div>
+          </div>
+        </div>
+
+        <div class="progress-track mb-6"><div class="progress-fill gradient" id="quiz-progress-bar" style="width:10%"></div></div>
+
+        <div id="question-container"></div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:var(--space-6)">
+          <button class="btn btn-ghost" id="prev-btn" onclick="prevQuestion()" disabled>← Previous</button>
+          <div style="display:flex;gap:var(--space-3)">
+            <button class="btn btn-outline" id="skip-btn" onclick="nextQuestion()">Skip</button>
+            <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 3: Results -->
+      <div class="step-phase" id="phase-result">
+        <div style="max-width:700px;margin:0 auto">
+          <div class="text-center mb-8">
+            <div id="result-emoji" style="font-size:64px;margin-bottom:var(--space-4)">🎉</div>
+            <h1>Assessment Complete!</h1>
+            <p class="mt-2">Here's your detailed performance breakdown</p>
+          </div>
+
+          <!-- Score Ring -->
+          <div style="display:flex;justify-content:center;margin-bottom:var(--space-8)">
+            <div class="result-ring">
+              <svg width="200" height="200" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="16"/>
+                <circle id="score-ring" cx="100" cy="100" r="90" fill="none" stroke="url(#rgrad)" stroke-width="16" stroke-linecap="round" transform="rotate(-90 100 100)" style="stroke-dasharray:565;stroke-dashoffset:565;transition:stroke-dashoffset 1.5s cubic-bezier(0.34,1.56,0.64,1)"/>
+                <defs>
+                  <linearGradient id="rgrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#6366f1"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="result-center">
+                <div id="result-score" style="font-size:var(--text-4xl);font-weight:var(--font-black);font-family:var(--font-heading);letter-spacing:-0.04em"></div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">Score</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result Stats -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-8)">
+            <div style="text-align:center;padding:var(--space-4);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-lg)">
+              <div id="result-correct" style="font-size:var(--text-3xl);font-weight:var(--font-bold);color:var(--emerald-400)"></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Correct</div>
+            </div>
+            <div style="text-align:center;padding:var(--space-4);background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);border-radius:var(--radius-lg)">
+              <div id="result-wrong" style="font-size:var(--text-3xl);font-weight:var(--font-bold);color:var(--rose-400)"></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Incorrect</div>
+            </div>
+            <div style="text-align:center;padding:var(--space-4);background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:var(--radius-lg)">
+              <div id="result-skipped" style="font-size:var(--text-3xl);font-weight:var(--font-bold);color:var(--text-muted)"></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Skipped</div>
+            </div>
+          </div>
+
+          <!-- Level Badge -->
+          <div id="result-level-card" class="card card-gradient-indigo text-center mb-6">
+            <div id="result-level-icon" style="font-size:40px;margin-bottom:var(--space-3)"></div>
+            <div id="result-level-text" style="font-weight:var(--font-bold);font-size:var(--text-xl)"></div>
+            <div id="result-level-sub" style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)"></div>
+          </div>
+
+          <!-- Question Review -->
+          <div class="card mb-6">
+            <div class="card-title mb-4">📋 Question Review</div>
+            <div id="result-review"></div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="retake()">🔄 Retake Assessment</button>
+            <a href="skill-profile.html" class="btn btn-outline">📊 View Skill Profile</a>
+            <a href="dashboard.html" class="btn btn-primary">🏠 Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser, selectedSkill = '', selectedLevel = '', selectedRole = '', questions = [], answers = [], currentQ = 0;
+
+const ROLES = [
+  { id:'software-engineer',  label:'Software Engineer',    icon:'💻', color:'indigo' },
+  { id:'data-scientist',     label:'Data Scientist',       icon:'📊', color:'cyan'   },
+  { id:'ml-engineer',        label:'ML / AI Engineer',     icon:'🤖', color:'violet' },
+  { id:'web-developer',      label:'Web Developer',        icon:'🌐', color:'emerald'},
+  { id:'devops-engineer',    label:'DevOps Engineer',      icon:'⚙️',  color:'amber'  },
+  { id:'cloud-architect',    label:'Cloud Architect',      icon:'☁️',  color:'cyan'   },
+  { id:'cybersecurity',      label:'Cybersecurity Analyst',icon:'🔒', color:'rose'   },
+  { id:'data-analyst',       label:'Data Analyst',         icon:'📈', color:'amber'  },
+];
+
+// Role → relevant skills to show (highlighted/filtered)
+const ROLE_SKILLS = {
+  'software-engineer':   ['Java','Python','DSA','System Design','SQL','JavaScript','Git & Version Control','API Design'],
+  'data-scientist':      ['Python','SQL','Machine Learning','Statistics','Data Visualization','Deep Learning','Mathematics'],
+  'ml-engineer':         ['Python','Machine Learning','Deep Learning','TensorFlow/PyTorch','MLOps','Mathematics','SQL'],
+  'web-developer':       ['JavaScript','React','HTML/CSS','Node.js','SQL','API Design','TypeScript'],
+  'devops-engineer':     ['DevOps','Cloud Computing','Linux & Shell','Docker & Kubernetes','CI/CD','Python','Networking'],
+  'cloud-architect':     ['Cloud Computing','AWS/Azure/GCP','Networking','Security','System Design','DevOps','Databases'],
+  'cybersecurity':       ['Cybersecurity','Networking','Linux & Shell','Cryptography','Ethical Hacking','Python','Risk Analysis'],
+  'data-analyst':        ['SQL','Python','Data Visualization','Statistics','Excel & Spreadsheets','Logical Reasoning','Communication'],
+};
+
+const SKILLS = [
+  { name:'Python',             icon:'🐍', cat:'technical' },
+  { name:'Java',               icon:'☕', cat:'technical' },
+  { name:'JavaScript',         icon:'⚡', cat:'technical' },
+  { name:'DSA',                icon:'🌳', cat:'technical' },
+  { name:'SQL',                icon:'🗄️', cat:'technical' },
+  { name:'React',              icon:'⚛️', cat:'technical' },
+  { name:'Machine Learning',   icon:'🤖', cat:'technical' },
+  { name:'Deep Learning',      icon:'🧠', cat:'technical' },
+  { name:'System Design',      icon:'🏗️', cat:'technical' },
+  { name:'Cloud Computing',    icon:'☁️',  cat:'technical' },
+  { name:'Cybersecurity',      icon:'🔒', cat:'technical' },
+  { name:'DevOps',             icon:'⚙️',  cat:'technical' },
+  { name:'Docker & Kubernetes',icon:'🐳', cat:'technical' },
+  { name:'API Design',         icon:'🔌', cat:'technical' },
+  { name:'TypeScript',         icon:'📘', cat:'technical' },
+  { name:'Node.js',            icon:'🟢', cat:'technical' },
+  { name:'HTML/CSS',           icon:'🎨', cat:'technical' },
+  { name:'Statistics',         icon:'📉', cat:'technical' },
+  { name:'Data Visualization', icon:'📊', cat:'technical' },
+  { name:'Linux & Shell',      icon:'🐧', cat:'technical' },
+  { name:'Networking',         icon:'🌐', cat:'technical' },
+  { name:'Mathematics',        icon:'➗', cat:'technical' },
+  { name:'Databases',          icon:'🗃️', cat:'technical' },
+  { name:'Quantitative',       icon:'🔢', cat:'aptitude'  },
+  { name:'Logical Reasoning',  icon:'🧩', cat:'aptitude'  },
+  { name:'Verbal',             icon:'📖', cat:'aptitude'  },
+  { name:'Communication',      icon:'🗣️', cat:'soft'      },
+  { name:'Leadership',         icon:'👑', cat:'soft'      },
+  { name:'Teamwork',           icon:'🤝', cat:'soft'      },
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  // Pre-select role from user's career interests if available
+  const interest = (currentUser.careerInterests || [])[0] || '';
+  const preRole = guessRoleId(interest);
+  renderRoleGrid(preRole);
+  renderPastResults();
+});
+
+function guessRoleId(interest) {
+  const lower = (interest || '').toLowerCase();
+  if (lower.includes('data sci'))    return 'data-scientist';
+  if (lower.includes('ml') || lower.includes('ai')) return 'ml-engineer';
+  if (lower.includes('web'))         return 'web-developer';
+  if (lower.includes('devops'))      return 'devops-engineer';
+  if (lower.includes('cloud'))       return 'cloud-architect';
+  if (lower.includes('security'))    return 'cybersecurity';
+  if (lower.includes('analyst'))     return 'data-analyst';
+  if (lower.includes('software'))    return 'software-engineer';
+  return '';
+}
+
+function renderRoleGrid(preSelectedId = '') {
+  document.getElementById('role-grid').innerHTML = ROLES.map(r => `
+    <div class="role-card ${preSelectedId===r.id?'selected':''}" id="role-card-${r.id}" onclick="selectRole('${r.id}',this)">
+      <div class="skill-card-icon">${r.icon}</div>
+      <div class="skill-card-name" style="font-size:var(--text-xs)">${r.label}</div>
+    </div>`).join('');
+  if (preSelectedId) {
+    selectedRole = preSelectedId;
+    const roleLabel = ROLES.find(r => r.id === preSelectedId)?.label || preSelectedId;
+    document.getElementById('skill-section').style.display = 'block';
+    document.getElementById('role-context-label').textContent = roleLabel;
+    renderSkillGrid('all');
+  }
+}
+
+function selectRole(roleId, el) {
+  selectedRole = roleId;
+  selectedSkill = ''; selectedLevel = '';
+  // Only clear skill cards, NOT role cards
+  document.querySelectorAll('#skill-grid .skill-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('#role-grid .role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+
+  const roleLabel = ROLES.find(r => r.id === roleId)?.label || roleId;
+  document.getElementById('role-context-label').textContent = roleLabel;
+  document.getElementById('skill-section').style.display = 'block';
+  document.getElementById('level-section').style.display = 'none';
+  document.getElementById('start-section').style.display = 'none';
+  document.getElementById('skill-section').scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // Reset category tabs
+  document.querySelectorAll('#cat-tabs .tab-pill').forEach(b => b.classList.remove('active'));
+  document.querySelector('#cat-tabs .tab-pill').classList.add('active');
+  renderSkillGrid('all');
+}
+
+function showAllSkills() {
+  renderSkillGrid('all', true);
+}
+
+function renderSkillGrid(cat, showAll = false) {
+  let pool = cat === 'all' ? SKILLS : SKILLS.filter(s => s.cat === cat);
+  const roleSkills = selectedRole ? (ROLE_SKILLS[selectedRole] || []) : [];
+
+  // Sort: role-relevant skills first, then rest; unless showAll is forced
+  if (roleSkills.length && !showAll) {
+    const relevant = pool.filter(s => roleSkills.includes(s.name));
+    const rest = pool.filter(s => !roleSkills.includes(s.name));
+    pool = [...relevant, ...rest];
+  }
+
+  document.getElementById('skill-grid').innerHTML = pool.map(s => {
+    const isRelevant = roleSkills.includes(s.name);
+    const score = (currentUser.skillProfile||{})[s.name];
+    return `
+    <div class="skill-card ${selectedSkill===s.name?'selected':''}" onclick="selectSkill('${s.name}',this)" style="position:relative">
+      ${isRelevant && selectedRole ? `<div style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--indigo-500);box-shadow:0 0 6px rgba(99,102,241,0.6)" title="Relevant to your role"></div>` : ''}
+      <div class="skill-card-icon">${s.icon}</div>
+      <div class="skill-card-name">${s.name}</div>
+      ${score ? `<div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:3px">${score}% assessed</div>` : ''}
+      ${isRelevant && selectedRole ? `<div style="font-size:9px;color:var(--indigo-400);margin-top:2px;font-weight:600">★ Role Skill</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function filterCategory(cat, btn) {
+  document.querySelectorAll('#cat-tabs .tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSkillGrid(cat);
+}
+
+function selectSkill(skill, el) {
+  selectedSkill = skill;
+  // Only clear skill cards — do NOT touch role cards
+  document.querySelectorAll('#skill-grid .skill-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('level-section').style.display = 'block';
+  document.getElementById('level-section').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  updateStartSection();
+}
+
+function selectLevel(level, btn) {
+  selectedLevel = level;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateStartSection();
+}
+
+function updateStartSection() {
+  if (selectedSkill && selectedLevel) {
+    document.getElementById('start-section').style.display = 'block';
+    document.getElementById('start-skill-label').textContent = selectedSkill;
+    document.getElementById('start-level-label').textContent = selectedLevel;
+    const roleLabel = ROLES.find(r => r.id === selectedRole)?.label || '';
+    const roleLabelEl = document.getElementById('start-role-label');
+    if (roleLabelEl) roleLabelEl.textContent = roleLabel || 'General';
+    document.getElementById('start-section').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+}
+
+async function startAssessment() {
+  if (!selectedSkill || !selectedLevel) {
+    showToast('Please select a skill and difficulty level', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('start-btn');
+  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite"></span> Generating...</span>';
+  btn.disabled = true;
+
+  const roleName = ROLES.find(r => r.id === selectedRole)?.label || '';
+  const roleContext = roleName
+    ? `The student is preparing for a ${roleName} role. Make questions scenario-based and relevant to this career path.`
+    : '';
+
+  let usedFallback = false;
+
+  try {
+    // Only call AI if a key is already configured — otherwise go straight to fallback
+    if (AIService.hasKey()) {
+      const result = await AIService.run(() =>
+        AIService.generateAssessment(selectedSkill, selectedLevel, 10, roleContext)
+      );
+      if (result && result.length) {
+        questions = result;
+      } else {
+        usedFallback = true;
+        questions = generateFallbackQuestions(selectedSkill, selectedLevel, selectedRole);
+      }
+    } else {
+      usedFallback = true;
+      questions = generateFallbackQuestions(selectedSkill, selectedLevel, selectedRole);
+    }
+  } catch (err) {
+    console.error('[Assessment] Error generating questions:', err);
+    usedFallback = true;
+    questions = generateFallbackQuestions(selectedSkill, selectedLevel, selectedRole);
+  }
+
+  // Safety: ensure we always have questions
+  if (!questions || questions.length === 0) {
+    questions = generateFallbackQuestions(selectedSkill, selectedLevel, selectedRole);
+    usedFallback = true;
+  }
+
+  btn.innerHTML = '🚀 Generate &amp; Start';
+  btn.disabled = false;
+
+  if (usedFallback) {
+    showToast('Using built-in offline questions', 'info');
+  }
+
+  answers = new Array(questions.length).fill(null);
+  currentQ = 0;
+
+  const roleTag = roleName ? ` · ${roleName}` : '';
+  document.getElementById('quiz-title').textContent =
+    `${selectedSkill} — ${selectedLevel.charAt(0).toUpperCase() + selectedLevel.slice(1)}${roleTag}`;
+
+  showPhase('phase-quiz');
+  renderQuestion();
+}
+
+// Role-specific fallback question banks
+const FALLBACK_BANKS = {
+  'Python': [
+    { q:'What does the `with` statement do in Python?', opts:['Context manager — ensures cleanup','Loops over a list','Defines a function','Imports a module'], ans:0, exp:'`with` is used for context managers, ensuring resources like files are properly closed.' },
+    { q:'Which Python data structure is immutable?', opts:['List','Dictionary','Tuple','Set'], ans:2, exp:'Tuples are immutable — they cannot be changed after creation.' },
+    { q:'What is a list comprehension in Python?', opts:['A concise way to create lists','A sorting algorithm','A type of loop','A class method'], ans:0, exp:'List comprehensions provide a concise way to create lists: [x*2 for x in range(10)].' },
+    { q:'What does `*args` mean in a Python function?', opts:['Accept any number of positional arguments','Accept keyword arguments','Return multiple values','Create a generator'], ans:0, exp:'`*args` collects extra positional arguments as a tuple.' },
+    { q:'Which module is used for data manipulation in Python?', opts:['NumPy','Pandas','Both are used','Neither'], ans:2, exp:'Pandas is for tabular data; NumPy is for numerical arrays. Both are widely used.' },
+    { q:'What is a Python decorator?', opts:['A function that wraps another function','A class variable','A UI styling tool','A type annotation'], ans:0, exp:'Decorators modify the behavior of functions without changing their source code.' },
+    { q:'What is the difference between `==` and `is` in Python?', opts:['`==` checks value; `is` checks identity','They are the same','`is` checks value; `==` checks type','Neither compares objects'], ans:0, exp:'`==` compares values; `is` compares if two references point to the same object.' },
+    { q:'Which of these is used for virtual environments in Python?', opts:['venv','pip','pyenv','conda'], ans:0, exp:'`venv` creates isolated Python environments for each project.' },
+    { q:'What does `GIL` stand for in Python?', opts:['Global Interpreter Lock','General Iteration Loop','Garbage Isolation Layer','Global Import Library'], ans:0, exp:'GIL prevents multiple threads from executing Python bytecode simultaneously.' },
+    { q:'What is the output of `[1,2,3][::-1]`?', opts:['[3,2,1]','[1,2,3]','Error','[3]'], ans:0, exp:'Slice `[::-1]` reverses the list.' },
+  ],
+  'SQL': [
+    { q:'Which SQL clause filters rows after grouping?', opts:['WHERE','HAVING','GROUP BY','ORDER BY'], ans:1, exp:'HAVING filters groups after GROUP BY; WHERE filters individual rows before grouping.' },
+    { q:'What is a PRIMARY KEY?', opts:['A unique identifier for each row','A foreign table reference','An index type','A constraint on NULL values'], ans:0, exp:'A PRIMARY KEY uniquely identifies each record and cannot be NULL.' },
+    { q:'What does a LEFT JOIN return?', opts:['All rows from left table + matching from right','Only matching rows','All rows from both tables','Only right table rows'], ans:0, exp:'LEFT JOIN returns all records from the left table and matched records from the right.' },
+    { q:'Which command removes all rows from a table without logging?', opts:['DELETE','DROP','TRUNCATE','REMOVE'], ans:2, exp:'TRUNCATE removes all rows quickly without row-by-row logging.' },
+    { q:'What is database normalization?', opts:['Organizing data to reduce redundancy','Speeding up queries','Encrypting data','Backing up tables'], ans:0, exp:'Normalization organizes database tables to minimize data redundancy and dependency.' },
+    { q:'What does `DISTINCT` do in SQL?', opts:['Returns unique values','Sorts results','Filters NULL','Groups results'], ans:0, exp:'DISTINCT eliminates duplicate rows from query results.' },
+    { q:'What is an index in SQL?', opts:['A data structure to speed up queries','A table constraint','A type of JOIN','A backup mechanism'], ans:0, exp:'Indexes improve query performance by allowing faster data retrieval.' },
+    { q:'Which SQL function counts non-NULL values?', opts:['COUNT(*)','COUNT(column)','SUM()','COUNT(NULL)'], ans:1, exp:'COUNT(column) counts non-NULL values; COUNT(*) counts all rows including NULLs.' },
+    { q:'What is a stored procedure?', opts:['A saved SQL code block executed on demand','A table view','A trigger','A constraint'], ans:0, exp:'Stored procedures are precompiled SQL blocks that can be executed repeatedly.' },
+    { q:'What is an ACID transaction?', opts:['Atomic, Consistent, Isolated, Durable','Auto, Control, Integrate, Deliver','Access, Create, Index, Delete','None of the above'], ans:0, exp:'ACID properties ensure reliable database transactions.' },
+  ],
+  'Machine Learning': [
+    { q:'What is overfitting in machine learning?', opts:['Model memorizes training data and performs poorly on new data','Model has too few parameters','Model is too fast','Model is not trained enough'], ans:0, exp:'Overfitting occurs when a model learns noise in training data, reducing generalization.' },
+    { q:'Which technique reduces overfitting?', opts:['Regularization','More training data','Both A and B','Neither'], ans:2, exp:'Both regularization (L1/L2) and more data help reduce overfitting.' },
+    { q:'What is a confusion matrix?', opts:['A table showing actual vs predicted classifications','A loss function','A type of neural network','A feature selection method'], ans:0, exp:'A confusion matrix summarizes classification model performance showing TP, FP, TN, FN.' },
+    { q:'What does gradient descent do?', opts:['Minimizes the loss function iteratively','Normalizes features','Splits data','Selects features'], ans:0, exp:'Gradient descent updates model weights in the direction that minimizes the loss.' },
+    { q:'What is cross-validation?', opts:['Technique to evaluate model on multiple data splits','A type of neural network layer','Feature normalization','Data augmentation'], ans:0, exp:'Cross-validation (e.g., k-fold) provides a more reliable model performance estimate.' },
+    { q:'Which algorithm is used for classification and regression?', opts:['Decision Trees','K-Means','PCA','DBSCAN'], ans:0, exp:'Decision Trees can solve both classification and regression problems.' },
+    { q:'What is the bias-variance tradeoff?', opts:['Balance between underfitting (high bias) and overfitting (high variance)','Speed vs accuracy','Precision vs recall','Training vs test error'], ans:0, exp:'Increasing model complexity reduces bias but increases variance and vice versa.' },
+    { q:'What is feature engineering?', opts:['Creating new features from raw data','Training the model','Tuning hyperparameters','Splitting the dataset'], ans:0, exp:'Feature engineering transforms raw data into meaningful features for the model.' },
+    { q:'What does AUC-ROC measure?', opts:['Overall model discrimination ability across thresholds','Model training speed','Feature importance','Prediction confidence'], ans:0, exp:'AUC-ROC measures how well a model distinguishes between positive and negative classes.' },
+    { q:'Which is a hyperparameter in a Random Forest?', opts:['Number of trees','Learned weights','Node split values','Training error'], ans:0, exp:'Number of estimators (trees) is a hyperparameter set before training.' },
+  ],
+  'System Design': [
+    { q:'What is horizontal scaling?', opts:['Adding more machines to handle load','Upgrading existing server hardware','Adding more RAM','Faster CPU'], ans:0, exp:'Horizontal scaling (scale out) adds more servers; vertical scaling upgrades existing hardware.' },
+    { q:'What is a CDN used for?', opts:['Delivering content from servers closest to users','Database replication','Load balancing application servers','API gateway management'], ans:0, exp:'CDNs cache content at edge servers worldwide to reduce latency for users.' },
+    { q:'What is the CAP theorem?', opts:['A system can have at most 2 of: Consistency, Availability, Partition tolerance','A caching strategy','An API design pattern','A database normalization rule'], ans:0, exp:'CAP theorem states distributed systems can guarantee only 2 of 3 properties simultaneously.' },
+    { q:'What is a message queue used for?', opts:['Asynchronous communication between services','Caching database results','User authentication','File storage'], ans:0, exp:'Message queues (e.g., RabbitMQ, Kafka) decouple producers and consumers for async processing.' },
+    { q:'What is a load balancer?', opts:['Distributes traffic across multiple servers','A database optimizer','A caching layer','An API gateway'], ans:0, exp:'Load balancers distribute incoming requests across multiple servers to prevent overload.' },
+    { q:'What is database sharding?', opts:['Splitting a database horizontally across multiple servers','Encrypting database','Creating database backups','Database indexing strategy'], ans:0, exp:'Sharding splits data across multiple database instances to scale horizontally.' },
+    { q:'What is eventual consistency?', opts:['System guarantees all nodes will eventually have the same data','Data is always consistent','No data replication','Immediate consistency'], ans:0, exp:'Eventual consistency means data will be consistent across nodes after some time.' },
+    { q:'What is the purpose of a cache?', opts:['Store frequently accessed data for fast retrieval','Permanent data storage','Network routing','Authentication management'], ans:0, exp:'Caches (e.g., Redis, Memcached) store frequent data in memory for fast access.' },
+    { q:'What is an API gateway?', opts:['Single entry point for client requests to microservices','A database interface','A caching solution','A message broker'], ans:0, exp:'API gateways handle routing, authentication, rate limiting, and load balancing.' },
+    { q:'What is a microservices architecture?', opts:['Breaking an application into small independent services','A monolithic application structure','A frontend framework','A database design pattern'], ans:0, exp:'Microservices architecture decomposes apps into independently deployable services.' },
+  ],
+  'DSA': [
+    { q:'What is the time complexity of quicksort on average?', opts:['O(n log n)','O(n²)','O(n)','O(log n)'], ans:0, exp:'Quicksort has average O(n log n) time complexity but O(n²) in the worst case.' },
+    { q:'Which data structure uses LIFO?', opts:['Queue','Stack','Linked List','Tree'], ans:1, exp:'Stack follows Last-In-First-Out (LIFO) — the last element added is the first removed.' },
+    { q:'What is the space complexity of merge sort?', opts:['O(n)','O(1)','O(log n)','O(n²)'], ans:0, exp:'Merge sort requires O(n) extra space for the temporary array during merging.' },
+    { q:'Which graph traversal uses a queue?', opts:['DFS','BFS','Dijkstra','Bellman-Ford'], ans:1, exp:'BFS (Breadth-First Search) uses a queue to explore nodes level by level.' },
+    { q:'What is a balanced BST?', opts:['A BST where left and right subtree heights differ by at most 1','A BST with sorted input','A BST with only left children','A circular BST'], ans:0, exp:'Balanced BSTs (e.g., AVL, Red-Black) maintain height balance for O(log n) operations.' },
+    { q:'What problem does dynamic programming solve efficiently?', opts:['Problems with overlapping subproblems and optimal substructure','Only sorting problems','Only graph problems','Problems with no recursion'], ans:0, exp:'DP stores results of subproblems to avoid recomputation (e.g., Fibonacci, Knapsack).' },
+    { q:'What is a hash collision?', opts:['Two different keys map to the same hash value','A hash table full error','Incorrect hash function','A sorted hash'], ans:0, exp:'Collisions occur when two keys produce the same hash index; resolved via chaining or probing.' },
+    { q:'What is the height of a complete binary tree with n nodes?', opts:['O(log n)','O(n)','O(n²)','O(1)'], ans:0, exp:'A complete binary tree has height ⌊log₂ n⌋, giving O(log n) height.' },
+    { q:'Which algorithm finds the shortest path in an unweighted graph?', opts:['BFS','DFS','Dijkstra','Bellman-Ford'], ans:0, exp:'BFS finds shortest paths in unweighted graphs by exploring nodes level by level.' },
+    { q:'What is the time complexity of accessing an element in a hash table?', opts:['O(1) average','O(log n)','O(n)','O(n log n)'], ans:0, exp:'Hash tables provide O(1) average-case access using direct addressing via hash functions.' },
+  ],
+  'Cloud Computing': [
+    { q:'What is IaaS?', opts:['Infrastructure as a Service — virtualized computing resources','Internet as a Service','Integration as a Service','Interface as a Service'], ans:0, exp:'IaaS provides virtualized hardware (VMs, storage, networking) on demand (e.g., AWS EC2).' },
+    { q:'What is the shared responsibility model in cloud security?', opts:['Cloud provider secures infrastructure; customer secures their data and apps','Customer is responsible for everything','Cloud provider is responsible for everything','Only applies to PaaS'], ans:0, exp:'Cloud providers secure hardware/networking; customers secure their data, apps, and configurations.' },
+    { q:'What is auto-scaling?', opts:['Automatically adjusting resources based on demand','Automatic software updates','Automatic security patching','Auto-provisioning databases'], ans:0, exp:'Auto-scaling adds or removes compute resources dynamically based on workload demand.' },
+    { q:'What is serverless computing?', opts:['Code runs without managing servers — provider handles infrastructure','No internet connection needed','No cloud usage','A bare-metal deployment'], ans:0, exp:'Serverless (e.g., AWS Lambda) lets you run code without provisioning servers.' },
+    { q:'What is a VPC?', opts:['Virtual Private Cloud — isolated network in the cloud','Virtual Processing Core','Variable Protection Configuration','Virtual Public Cloud'], ans:0, exp:'A VPC is an isolated section of a cloud providers network where you control IP ranges, subnets, and routing.' },
+    { q:'What is object storage?', opts:['Storing data as objects with metadata','Block-level storage','File-system storage','Database storage'], ans:0, exp:'Object storage (e.g., AWS S3) stores data as objects with metadata and unique IDs.' },
+    { q:'What is multi-region deployment?', opts:['Deploying applications across multiple geographic regions for redundancy','Multiple server types','Multiple programming languages','Multiple databases'], ans:0, exp:'Multi-region deployment improves availability and reduces latency for global users.' },
+    { q:'What does SLA stand for in cloud services?', opts:['Service Level Agreement','System Level Architecture','Software Licensing Agreement','Secure Layer Access'], ans:0, exp:'An SLA defines the guaranteed uptime and performance levels between provider and customer.' },
+    { q:'What is a managed service?', opts:['Cloud-operated service where provider handles maintenance','Self-hosted server','On-premise software','Custom hardware'], ans:0, exp:'Managed services (e.g., RDS, DynamoDB) let the cloud provider handle patching and scaling.' },
+    { q:'What is elastic load balancing?', opts:['Automatically distributing traffic and scaling to handle load','Static routing','Database replication','CDN management'], ans:0, exp:'Elastic load balancers automatically distribute traffic and work with auto-scaling groups.' },
+  ],
+  'DevOps': [
+    { q:'What is CI/CD?', opts:['Continuous Integration / Continuous Delivery (automated build & deploy)','Code Integration / Code Delivery','Container Infrastructure / Container Deployment','None of the above'], ans:0, exp:'CI/CD automates building, testing, and deploying code changes to production.' },
+    { q:'What is Infrastructure as Code (IaC)?', opts:['Managing infrastructure through machine-readable configuration files','Writing code for hardware','Manual server provisioning','A programming paradigm'], ans:0, exp:'IaC (e.g., Terraform, Ansible) defines infrastructure in code for repeatability and versioning.' },
+    { q:'What does a Dockerfile define?', opts:['Instructions to build a Docker image','A network configuration','A CI/CD pipeline','A Kubernetes deployment'], ans:0, exp:'A Dockerfile contains a set of instructions to assemble a Docker container image.' },
+    { q:'What is Kubernetes used for?', opts:['Container orchestration at scale','Source code versioning','Database management','Static site hosting'], ans:0, exp:'Kubernetes automates deployment, scaling, and management of containerized applications.' },
+    { q:'What is the purpose of a Helm chart?', opts:['Package manager for Kubernetes applications','A monitoring dashboard','A network policy','A CI tool'], ans:0, exp:'Helm charts are packages of pre-configured Kubernetes resources for easy deployment.' },
+    { q:'What is the blue-green deployment strategy?', opts:['Running two identical environments — switch traffic to new version after testing','A container networking strategy','A database migration pattern','A monitoring technique'], ans:0, exp:'Blue-green keeps two environments; traffic switches from blue (old) to green (new) after validation.' },
+    { q:'What does `git rebase` do?', opts:['Moves or combines commits onto another branch','Merges two branches with a merge commit','Reverts the last commit','Deletes a branch'], ans:0, exp:'Rebase replays commits from one branch on top of another, creating a linear history.' },
+    { q:'What is observability in DevOps?', opts:['Ability to understand system state through metrics, logs, and traces','Monitoring hardware only','Automated testing','Code review process'], ans:0, exp:'Observability (metrics, logs, traces) allows teams to understand system behavior and debug issues.' },
+    { q:'What is a canary deployment?', opts:['Rolling out a release to a small subset of users first','Deploying to all users simultaneously','Rolling back a deployment','A testing strategy'], ans:0, exp:'Canary releases expose a new version to a small percentage of users to detect issues early.' },
+    { q:'What is a service mesh?', opts:['Infrastructure layer for managing service-to-service communication','A container registry','A load balancer','A CI/CD tool'], ans:0, exp:'Service meshes (e.g., Istio) handle traffic management, observability, and security between microservices.' },
+  ],
+  'Cybersecurity': [
+    { q:'What is SQL injection?', opts:['Malicious SQL code inserted into input fields to manipulate databases','A slow database query','A network attack','A type of malware'], ans:0, exp:'SQL injection exploits unsanitized input to manipulate database queries (e.g., login bypass).' },
+    { q:'What is multi-factor authentication (MFA)?', opts:['Using multiple verification methods (e.g., password + OTP)','Using multiple passwords','Biometric-only authentication','IP-based authentication'], ans:0, exp:'MFA requires multiple proof types — something you know, have, or are — for stronger security.' },
+    { q:'What does the principle of least privilege mean?', opts:['Users get only the minimum permissions needed for their job','All users have admin access','Restrict access to only the security team','Remove all access by default'], ans:0, exp:'Least privilege minimizes damage from breaches by limiting user access to what is necessary.' },
+    { q:'What is a man-in-the-middle attack?', opts:['Attacker intercepts communication between two parties','A DDoS attack type','A phishing email','A brute force attack'], ans:0, exp:'MitM attacks intercept and potentially alter communication between client and server.' },
+    { q:'What is a DDoS attack?', opts:['Flooding a server with traffic from multiple sources to cause downtime','Stealing credentials','Encrypting files for ransom','SQL injection variant'], ans:0, exp:'Distributed Denial-of-Service attacks overwhelm a target with traffic from many compromised systems.' },
+    { q:'What is encryption at rest?', opts:['Encrypting stored data on disk','Encrypting data during network transmission','Encrypting only database passwords','Encrypting application code'], ans:0, exp:'Encryption at rest protects stored data (files, databases) from unauthorized access.' },
+    { q:'What is a zero-day vulnerability?', opts:['A vulnerability unknown to the software vendor with no available patch','A bug fixed on day zero','A network configuration error','An outdated software warning'], ans:0, exp:'Zero-day vulnerabilities are exploited before the vendor knows about or patches them.' },
+    { q:'What is penetration testing?', opts:['Authorized simulated attack on a system to find vulnerabilities','Testing network speed','Checking for software updates','Stress testing a server'], ans:0, exp:'Pen testing simulates real attacks to identify security weaknesses before malicious actors do.' },
+    { q:'What is OWASP?', opts:['Open Web Application Security Project — provides web security guidelines','A programming language','A firewall type','A cloud provider'], ans:0, exp:'OWASP publishes the Top 10 web application security risks and provides security best practices.' },
+    { q:'What does HTTPS provide over HTTP?', opts:['Encrypted communication via TLS/SSL','Faster page loading','Compressed responses','Better caching'], ans:0, exp:'HTTPS encrypts data between browser and server using TLS, preventing eavesdropping and tampering.' },
+  ],
+  'JavaScript': [
+    { q:'What is the difference between `let`, `const`, and `var`?', opts:['`const` is immutable; `let` is block-scoped; `var` is function-scoped','They are identical','`var` is block-scoped','`let` is function-scoped'], ans:0, exp:'`const` cannot be reassigned; `let` and `const` are block-scoped; `var` is function-scoped and hoisted.' },
+    { q:'What is a Promise in JavaScript?', opts:['An object representing eventual completion or failure of an async operation','A function declaration','A loop construct','A class constructor'], ans:0, exp:'Promises handle asynchronous operations — they can be pending, fulfilled, or rejected.' },
+    { q:'What is event delegation?', opts:['Attaching one event listener to a parent to handle child events','Assigning multiple listeners to one element','Preventing event propagation','Cloning event handlers'], ans:0, exp:'Event delegation uses event bubbling — attach one listener to a parent element for all children.' },
+    { q:'What does `===` do in JavaScript?', opts:['Strict equality — checks value and type','Checks value only','Assigns a value','Logical AND'], ans:0, exp:'`===` checks both value AND type, while `==` performs type coercion before comparison.' },
+    { q:'What is the event loop in JavaScript?', opts:['Mechanism that handles async operations by processing the callback queue','A loop for iterating DOM elements','A network request handler','A type of for loop'], ans:0, exp:'The event loop enables non-blocking async behavior by processing the callback queue after the call stack is empty.' },
+    { q:'What is closure in JavaScript?', opts:['A function that retains access to its outer scope even after the outer function returns','A class method','An async function','A type of object'], ans:0, exp:'Closures allow inner functions to access variables from the outer function even after it returns.' },
+    { q:'What does `Array.prototype.map()` return?', opts:['A new array with results of calling the function on each element','The original modified array','A single value','An object'], ans:0, exp:'`map()` returns a new array — it does not modify the original array.' },
+    { q:'What is the purpose of `async/await`?', opts:['Syntactic sugar over Promises for cleaner async code','A new loop type','A way to declare classes','A module system'], ans:0, exp:'`async/await` makes asynchronous code look synchronous and easier to read and debug.' },
+    { q:'What is the DOM?', opts:['Document Object Model — programming interface for HTML/XML documents','A JavaScript runtime','A CSS preprocessor','A network API'], ans:0, exp:'The DOM represents a web page as a tree of nodes that can be manipulated with JavaScript.' },
+    { q:'What is prototype in JavaScript?', opts:['An object from which other objects inherit properties','A class constructor','A type of variable','A module system'], ans:0, exp:'Every JavaScript object has a prototype — a reference to another object from which it inherits.' },
+  ],
+};
+
+function generateFallbackQuestions(skill, level, role) {
+  const bank = FALLBACK_BANKS[skill];
+  const roleLabel = ROLES.find(r => r.id === role)?.label || '';
+
+  if (bank) {
+    // Filter by difficulty if level is specified
+    let questions = bank.map((q, i) => ({
+      id: i + 1,
+      question: q.q,
+      options: q.opts,
+      correct: q.ans,
+      explanation: q.exp,
+      difficulty: i < 3 ? 'easy' : i < 7 ? 'medium' : 'hard',
+      topic: skill,
+      roleContext: roleLabel
+    }));
+    // Shuffle for variety
+    return questions.sort(() => Math.random() - 0.5).slice(0, 10);
+  }
+
+  // Generic fallback for skills without a specific bank
+  return Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    question: i === 0
+      ? `As a ${roleLabel || 'professional'}, what is the primary use of ${skill}?`
+      : `Which best practice is important for ${skill}${roleLabel ? ` in a ${roleLabel} role` : ''}?`,
+    options: ['A) Write clean, documented code','B) Skip error handling for speed','C) Hard-code all values','D) Avoid version control'],
+    correct: 0,
+    explanation: `Best practices in ${skill} are essential for any professional role.`,
+    difficulty: i < 3 ? 'easy' : i < 7 ? 'medium' : 'hard',
+    topic: skill
+  }));
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+  document.getElementById('q-progress').textContent = `${currentQ+1}/${total}`;
+  document.getElementById('quiz-progress-bar').style.width = `${((currentQ+1)/total)*100}%`;
+  document.getElementById('prev-btn').disabled = currentQ === 0;
+  document.getElementById('next-btn').textContent = currentQ === total - 1 ? 'Submit ✓' : 'Next →';
+  document.getElementById('skip-btn').style.display = currentQ === total - 1 ? 'none' : 'inline-flex';
+
+  document.getElementById('question-container').innerHTML = `
+    <div class="question-card scale-in">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)">
+        <span class="badge badge-${q.difficulty==='hard'?'rose':q.difficulty==='medium'?'amber':'emerald'}">${q.difficulty}</span>
+        <span style="font-size:var(--text-xs);color:var(--text-muted)">${q.topic}</span>
+      </div>
+      <div style="font-size:var(--text-lg);font-weight:var(--font-semibold);color:var(--text-primary);margin-bottom:var(--space-6);line-height:var(--leading-snug)">Q${currentQ+1}. ${q.question}</div>
+      <div id="options-container">
+        ${q.options.map((opt, i) => `
+          <button class="option-btn ${answers[currentQ]===i?'selected':''}" onclick="selectAnswer(${i})" id="opt-${i}">
+            <span style="font-weight:var(--font-bold);margin-right:var(--space-3);color:var(--text-muted)">${['A','B','C','D'][i]}.</span> ${opt}
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function selectAnswer(idx) {
+  answers[currentQ] = idx;
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i === idx);
+  });
+}
+
+function nextQuestion() {
+  if (currentQ === questions.length - 1) submitAssessment();
+  else { currentQ++; renderQuestion(); }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) { currentQ--; renderQuestion(); }
+}
+
+function submitAssessment() {
+  const correct = answers.filter((a, i) => a === questions[i].correct).length;
+  const wrong   = answers.filter((a, i) => a !== null && a !== questions[i].correct).length;
+  const skipped = answers.filter(a => a === null).length;
+  const score   = Math.round((correct / questions.length) * 100);
+
+  // Save to profile
+  const profile = { ...(currentUser.skillProfile || {}) };
+  profile[selectedSkill] = score;
+  const history = [
+    { id:'a_'+Date.now(), skill:selectedSkill, level:selectedLevel, score, total:questions.length, correct, date:new Date().toISOString() },
+    ...(currentUser.assessmentHistory || [])
+  ].slice(0, 20);
+  Auth.updateUser({ id:currentUser.id, skillProfile:profile, assessmentHistory:history });
+  currentUser = Auth.getUser();
+
+  Notifications.add('assessment', `Assessment result: ${selectedSkill} ${selectedLevel} — ${score}%`);
+
+  // Show result
+  showPhase('phase-result');
+
+  // Animate ring
+  setTimeout(() => {
+    const offset = 565 - (score / 100) * 565;
+    document.getElementById('score-ring').style.strokeDashoffset = offset;
+  }, 200);
+
+  document.getElementById('result-score').textContent = score + '%';
+  document.getElementById('result-correct').textContent = correct;
+  document.getElementById('result-wrong').textContent = wrong;
+  document.getElementById('result-skipped').textContent = skipped;
+
+  const levels = [
+    { min:85, icon:'🏆', text:'Excellent!', sub:`You have advanced-level ${selectedSkill} skills`, badge:'emerald' },
+    { min:65, icon:'⭐', text:'Good Job!', sub:`Intermediate proficiency in ${selectedSkill}`, badge:'cyan' },
+    { min:40, icon:'📈', text:'Keep Going!', sub:`Beginner level — focused practice will help`, badge:'amber' },
+    { min:0,  icon:'💪', text:'Keep Practicing', sub:`You\'re just starting with ${selectedSkill}`, badge:'rose' }
+  ];
+  const lv = levels.find(l => score >= l.min);
+  document.getElementById('result-level-icon').textContent = lv.icon;
+  document.getElementById('result-level-text').textContent = lv.text;
+  document.getElementById('result-level-sub').textContent = lv.sub;
+
+  // Review
+  document.getElementById('result-review').innerHTML = questions.map((q, i) => {
+    const ans = answers[i];
+    const isCorrect = ans === q.correct;
+    const isSkipped = ans === null;
+    return `
+      <div style="padding:var(--space-4);border-radius:var(--radius-md);border:1px solid ${isCorrect?'rgba(16,185,129,0.2)':isSkipped?'var(--border-primary)':'rgba(244,63,94,0.2)'};background:${isCorrect?'rgba(16,185,129,0.05)':isSkipped?'transparent':'rgba(244,63,94,0.05)'};margin-bottom:var(--space-3)">
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
+          <span>${isCorrect?'✅':isSkipped?'⏭':'❌'}</span>
+          <span style="font-size:var(--text-sm);font-weight:var(--font-semibold)">Q${i+1}. ${q.question}</span>
+        </div>
+        ${!isSkipped ? `<div style="font-size:var(--text-xs);color:var(--text-muted)">Your answer: ${q.options[ans]} ${isCorrect?'✓':'✗'}</div>` : ''}
+        ${!isCorrect ? `<div style="font-size:var(--text-xs);color:var(--emerald-400)">Correct: ${q.options[q.correct]}</div>` : ''}
+        ${q.explanation ? `<div style="font-size:var(--text-xs);color:var(--text-secondary);margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid rgba(255,255,255,0.05)">💡 ${q.explanation}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderPastResults() {
+  const history = currentUser.assessmentHistory || [];
+  if (!history.length) return;
+  document.getElementById('past-results-section').style.display = 'block';
+  document.getElementById('past-results-grid').innerHTML = history.slice(0,6).map(h => `
+    <div class="stat-card ${h.score>=80?'emerald':h.score>=60?'cyan':'amber'}">
+      <div style="font-weight:var(--font-bold);margin-bottom:var(--space-1)">${h.skill}</div>
+      <div style="font-size:var(--text-2xl);font-weight:var(--font-black);font-family:var(--font-heading);letter-spacing:-0.03em">${h.score}%</div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted)">${h.level} · ${App.formatDate(h.date)}</div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px">${h.correct}/${h.total} correct</div>
+    </div>`).join('');
+}
+
+function showPhase(id) {
+  document.querySelectorAll('.step-phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior:'smooth' });
+}
+
+function retake() {
+  selectedSkill = '';
+  selectedLevel = '';
+  questions = [];
+  answers = [];
+  currentQ = 0;
+  showPhase('phase-select');
+  // Keep selected role but reset skill/level UI
+  document.getElementById('level-section').style.display = 'none';
+  document.getElementById('start-section').style.display = 'none';
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+  renderSkillGrid('all');
+}
+</script>
+</body>
+</html>

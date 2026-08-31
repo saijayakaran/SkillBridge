@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Opportunities — Academician | SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Academician Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="opportunities.html" class="nav-item active"><span class="nav-icon">🔬</span> Browse Opportunities</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Faculty Opportunities</div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>🔬 Faculty Opportunities</h1>
+        <p class="subtitle">FDPs, industrial training, consultancy, research collaborations, and workshops</p>
+      </div>
+
+      <!-- Filter Bar -->
+      <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-4);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);margin-bottom:var(--space-5)">
+        <div style="position:relative;flex:1;min-width:200px">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)">🔍</span>
+          <input id="search-opp" type="text" class="form-input" style="padding-left:36px" placeholder="Search by title, organizer, expertise…" oninput="filterOpps()">
+        </div>
+        <select class="form-select" id="type-filter" onchange="filterOpps()" style="width:auto">
+          <option value="all">All Types</option>
+          <option value="FDP">FDP</option>
+          <option value="Industrial Training">Industrial Training</option>
+          <option value="Consultancy">Consultancy</option>
+          <option value="Research">Research</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Guest Lecture">Guest Lecture</option>
+        </select>
+        <select class="form-select" id="mode-filter" onchange="filterOpps()" style="width:auto">
+          <option value="all">All Modes</option>
+          <option value="Online">Online</option>
+          <option value="On-site">On-site</option>
+          <option value="Hybrid">Hybrid</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">Reset</button>
+      </div>
+
+      <!-- Sort & Count -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
+        <div class="tabs-pills">
+          <div class="tab-pill active" onclick="sortBy('match',this)">Best Match</div>
+          <div class="tab-pill" onclick="sortBy('deadline',this)">Closing Soon</div>
+          <div class="tab-pill" onclick="sortBy('saved',this)">Saved</div>
+        </div>
+        <span id="opp-count" style="font-size:var(--text-sm);color:var(--text-muted)"></span>
+      </div>
+
+      <!-- Grid -->
+      <div id="opp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:var(--space-5)"></div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+let currentUser, sortMode = 'match';
+
+const TYPE_CONFIG = {
+  FDP:                { color:'indigo', icon:'🎓' },
+  'Industrial Training':{ color:'cyan',   icon:'🏭' },
+  Consultancy:        { color:'amber',  icon:'💼' },
+  Research:           { color:'emerald',icon:'🔬' },
+  Workshop:           { color:'rose',   icon:'🛠' },
+  'Guest Lecture':    { color:'violet', icon:'🎤' }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('academician');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  filterOpps();
+});
+
+function filterOpps() {
+  const q    = document.getElementById('search-opp').value.toLowerCase();
+  const type = document.getElementById('type-filter').value;
+  const mode = document.getElementById('mode-filter').value;
+
+  let opps = MockData.facultyOpportunities.filter(o => {
+    const matchQ  = !q || o.title.toLowerCase().includes(q) || o.organizer.toLowerCase().includes(q) || (o.expertise||[]).some(e=>e.toLowerCase().includes(q));
+    const matchType = type === 'all' || o.type === type;
+    const matchMode = mode === 'all' || (o.mode||'').includes(mode);
+    return matchQ && matchType && matchMode && o.active;
+  });
+
+  // Compute match score based on expertise
+  const expertise = currentUser.expertise || [];
+  opps = opps.map(o => {
+    const matches = (o.expertise||[]).filter(e => expertise.some(ex => ex.toLowerCase().includes(e.toLowerCase()) || e.toLowerCase().includes(ex.toLowerCase())));
+    return { ...o, matchScore: Math.round((matches.length / Math.max((o.expertise||[]).length, 1)) * 100) };
+  });
+
+  if (sortMode === 'match') opps.sort((a,b) => b.matchScore - a.matchScore);
+  else if (sortMode === 'deadline') opps.sort((a,b) => new Date(a.deadline)-new Date(b.deadline));
+  else if (sortMode === 'saved') opps = opps.filter(o => (currentUser.savedOpportunities||[]).includes(o.id));
+
+  renderOpps(opps);
+}
+
+function sortBy(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.tabs-pills .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterOpps();
+}
+
+function resetFilters() {
+  document.getElementById('search-opp').value = '';
+  document.getElementById('type-filter').value = 'all';
+  document.getElementById('mode-filter').value = 'all';
+  filterOpps();
+}
+
+function renderOpps(opps) {
+  const el = document.getElementById('opp-grid');
+  document.getElementById('opp-count').textContent = `${opps.length} opportunit${opps.length!==1?'ies':'y'}`;
+
+  if (!opps.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:var(--space-12)"><div class="empty-icon">🔬</div><h3>No opportunities found</h3><p>Try adjusting your filters or update your expertise in your profile</p></div>`;
+    return;
+  }
+
+  const saved = currentUser.savedOpportunities || [];
+  el.innerHTML = opps.map(o => {
+    const tc = TYPE_CONFIG[o.type] || { color:'indigo', icon:'📋' };
+    const compensation = o.stipend || o.payment || o.honorarium || o.funding || (o.seats ? `${o.seats} seats` : '');
+    return `
+      <div class="card card-hover" style="padding:var(--space-5)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--space-4)">
+          <div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
+              <span style="font-size:20px">${tc.icon}</span>
+              <span class="badge badge-${tc.color}">${o.type}</span>
+              ${o.matchScore>0?`<span class="match-pill ${o.matchScore>=70?'high':'medium'}">${o.matchScore}% match</span>`:''}
+            </div>
+            <div style="font-size:var(--text-lg);font-weight:var(--font-bold)">${o.title}</div>
+            <div style="color:var(--text-secondary);font-size:var(--text-sm)">${o.organizer}</div>
+          </div>
+          <button onclick="toggleSave('${o.id}',event)" style="background:none;border:none;font-size:20px;cursor:pointer;padding:0;line-height:1">${saved.includes(o.id)?'❤️':'🤍'}</button>
+        </div>
+
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-4);line-height:var(--leading-relaxed)">${App.truncate(o.description,120)}</p>
+
+        <div class="opp-meta" style="margin-bottom:var(--space-4)">
+          ${o.mode?`<span class="opp-meta-item">${o.mode==='Online'?'💻':o.mode==='Hybrid'?'🔀':'🏢'} ${o.mode}</span>`:''}
+          ${o.duration?`<span class="opp-meta-item">⏱ ${o.duration}</span>`:''}
+          ${compensation?`<span class="opp-meta-item">💰 ${compensation}</span>`:''}
+          ${o.seats?`<span class="opp-meta-item">👥 ${o.seats} seats</span>`:''}
+          ${o.certificate?'<span class="opp-meta-item">📜 Certificate</span>':''}
+        </div>
+
+        <div class="tags-wrap" style="margin-bottom:var(--space-4)">${(o.expertise||[]).map(e=>`<span class="skill-tag">${e}</span>`).join('')}</div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:var(--text-xs);color:${new Date(o.deadline)<new Date(Date.now()+5*86400000)?'var(--rose-400)':'var(--text-muted)'}">
+            ⏰ Deadline: ${App.formatDate(o.deadline)} (${App.timeUntil(o.deadline)})
+          </span>
+        </div>
+
+        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+          <button class="btn btn-ghost btn-sm flex-1" onclick="toggleSave('${o.id}',event)">${saved.includes(o.id)?'❤ Saved':'🤍 Save'}</button>
+          <button class="btn btn-primary btn-sm flex-1" onclick="apply('${o.id}','${o.title}')">
+            ${o.type==='Research'?'📄 Submit Proposal':o.type==='Consultancy'?'💼 Express Interest':'🚀 Apply Now'}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleSave(id, e) {
+  e?.stopPropagation?.();
+  const saved = [...(currentUser.savedOpportunities||[])];
+  const idx = saved.indexOf(id);
+  idx>=0 ? saved.splice(idx,1) : saved.push(id);
+  Auth.updateUser({ id:currentUser.id, savedOpportunities:saved });
+  currentUser = Auth.getUser();
+  filterOpps();
+  showToast(idx>=0?'Removed from saved':'Opportunity saved!','info');
+}
+
+function apply(id, title) {
+  showToast(`Application submitted for: ${title} ✅`, 'success');
+  Notifications.add('application', `You applied for: ${title}`);
+}
+</script>
+</body>
+</html>

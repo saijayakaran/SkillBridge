@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill Profile — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Student Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item active"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item"><span class="nav-icon">🏅</span> My Portfolio</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Skill Profile & Gap Analysis</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="assessment.html" class="btn btn-primary btn-sm">📝 Take Assessment</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+          <div>
+            <h1>📊 Skill Profile</h1>
+            <p class="subtitle">Your assessed skills, career readiness, and AI-powered skill gap analysis</p>
+          </div>
+          <div style="display:flex;gap:var(--space-3)">
+            <button class="btn btn-outline btn-sm" onclick="loadAISkillDemand()">✦ Check Industry Demand</button>
+            <button class="btn btn-glass btn-sm" onclick="loadAICareerRec()">✦ AI Career Advice</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target Role Selector -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <div><div class="card-title">🎯 Select Target Role for Gap Analysis</div></div>
+        </div>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap" id="role-pills">
+          <!-- rendered -->
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:var(--space-6);margin-bottom:var(--space-6)">
+        <!-- Left -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+          <!-- Skill Bars -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🎯 Skill Assessment Scores</div>
+              <a href="assessment.html" class="btn btn-ghost btn-sm">+ Add More Skills</a>
+            </div>
+            <div id="skill-bars" class="skill-bar-init"></div>
+          </div>
+
+          <!-- Gap Analysis -->
+          <div class="card" id="gap-analysis-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">⚡ Gap Analysis</div>
+                <div class="card-subtitle" id="gap-role-label">Select a target role above</div>
+              </div>
+              <div id="gap-readiness-badge"></div>
+            </div>
+            <div id="gap-content">
+              <div class="empty-state" style="padding:var(--space-8)">
+                <div class="empty-icon">🎯</div>
+                <p>Select a target career role above to see your detailed skill gap analysis</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Career Recommendations -->
+          <div id="ai-career-section" style="display:none" class="card">
+            <div class="card-header">
+              <div><div class="ai-badge" style="margin-bottom:var(--space-1)">✦ Claude AI</div><div class="card-title">Career Recommendations</div></div>
+            </div>
+            <div id="ai-career-content"></div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <!-- Radar -->
+          <div class="card">
+            <div class="card-title mb-4">📡 Skill Radar</div>
+            <div style="display:flex;justify-content:center">
+              <canvas id="radar-chart" width="320" height="280"></canvas>
+            </div>
+          </div>
+
+          <!-- Career Matches -->
+          <div class="card">
+            <div class="card-title mb-4">🏆 Career Match Scores</div>
+            <div id="career-match-list" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+
+          <!-- Industry Demand -->
+          <div class="card" id="demand-card" style="display:none">
+            <div class="ai-badge mb-3">✦ Industry Demand</div>
+            <div class="card-title mb-4">🔥 Top In-Demand Skills</div>
+            <canvas id="demand-chart" width="340" height="300"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- AI Career Modal -->
+<div class="modal-overlay" id="ai-career-modal">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-header">
+      <div><div class="ai-badge mb-1">✦ Claude AI</div><h3 class="modal-title">AI Career Guidance</h3></div>
+      <button class="modal-close" onclick="closeModal('ai-career-modal')">×</button>
+    </div>
+    <div id="ai-career-modal-content">
+      <div class="loading-container"><div class="spinner"></div><p class="mt-4">Analyzing your profile…</p></div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser, selectedTargetRole = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderRolePills();
+  renderSkillBars();
+  renderRadar();
+  renderCareerMatches();
+});
+
+function renderRolePills() {
+  const el = document.getElementById('role-pills');
+  el.innerHTML = MockData.careerRoles.map(r => `
+    <button class="btn btn-sm btn-ghost ${selectedTargetRole?.id===r.id?'btn-primary':''}" onclick="selectTargetRole('${r.id}')">
+      ${r.title}
+    </button>`).join('');
+}
+
+function selectTargetRole(id) {
+  selectedTargetRole = MockData.careerRoles.find(r => r.id === id);
+  renderRolePills();
+  renderGapAnalysis();
+}
+
+function renderSkillBars() {
+  const el = document.getElementById('skill-bars');
+  const profile = currentUser.skillProfile || {};
+  const skills = currentUser.skills || Object.entries(profile).map(([name,score])=>({ name, score }));
+
+  if (!skills.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-icon">📊</div><p>No skills assessed yet. <a href="assessment.html">Take an assessment →</a></p></div>`;
+    return;
+  }
+
+  el.innerHTML = skills.map(s => {
+    const score = s.score || profile[s.name] || 0;
+    const color = score>=80?'emerald':score>=55?'cyan':'amber';
+    return `
+      <div style="margin-bottom:var(--space-4)">
+        <div class="progress-header">
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <span class="progress-name">${s.name}</span>
+            ${s.verified ? '<span title="Verified" style="color:var(--emerald-400);font-size:12px">✓</span>' : ''}
+            <span class="badge ${SkillGap.levelBadge(score)}">${SkillGap.levelLabel(score)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--space-3)">
+            <span class="progress-pct">${score}%</span>
+            <a href="assessment.html" style="font-size:var(--text-xs);color:var(--indigo-400)">Retake</a>
+          </div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill ${color}" data-w="${score}" style="width:0%"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    el.querySelectorAll('.progress-fill[data-w]').forEach(bar => {
+      bar.style.width = bar.dataset.w + '%';
+    });
+  }, 200);
+}
+
+function renderGapAnalysis() {
+  if (!selectedTargetRole) return;
+
+  const profile = currentUser.skillProfile || {};
+  const { matchScore, strong, moderate, gaps, readinessLevel, estimatedWeeksToReady } = SkillGap.analyze(profile, selectedTargetRole.skills);
+
+  document.getElementById('gap-role-label').textContent = `vs. ${selectedTargetRole.title} requirements`;
+  document.getElementById('gap-readiness-badge').innerHTML = `
+    <div style="text-align:center">
+      <div style="font-size:var(--text-2xl);font-weight:var(--font-black);font-family:var(--font-heading);color:${matchScore>=80?'var(--emerald-400)':matchScore>=60?'var(--cyan-400)':matchScore>=40?'var(--amber-400)':'var(--rose-400)'}">${matchScore}%</div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted)">${readinessLevel}</div>
+    </div>`;
+
+  const el = document.getElementById('gap-content');
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-6)">
+      <div style="text-align:center;padding:var(--space-3);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--emerald-400)">${strong.length}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">Strong</div>
+      </div>
+      <div style="text-align:center;padding:var(--space-3);background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--cyan-400)">${moderate.length}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">Moderate</div>
+      </div>
+      <div style="text-align:center;padding:var(--space-3);background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:var(--radius-md)">
+        <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--rose-400)">${gaps.length}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">Gaps</div>
+      </div>
+    </div>
+
+    ${gaps.length ? `
+    <div style="margin-bottom:var(--space-5)">
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm);color:var(--rose-400)">⚡ Skills to Develop (${estimatedWeeksToReady} weeks est.)</div>
+      ${gaps.map(g => `
+        <div style="margin-bottom:var(--space-3)">
+          <div class="progress-header">
+            <div style="display:flex;align-items:center;gap:var(--space-2)">
+              <span class="progress-name">${g.skill}</span>
+              <span class="badge badge-${g.priority==='high'?'rose':'amber'}">${g.priority} priority</span>
+            </div>
+            <span class="progress-pct">${g.current}% / ${g.required}% req.</span>
+          </div>
+          <div style="display:flex;gap:var(--space-2);align-items:center">
+            <div class="progress-track" style="flex:1">
+              <div class="progress-fill ${SkillGap.gapColor(g.pct)}" style="width:${g.pct}%"></div>
+            </div>
+            <span style="font-size:var(--text-xs);color:var(--text-muted);white-space:nowrap">−${g.deficit}pts gap</span>
+          </div>
+        </div>`).join('')}
+    </div>` : '<div style="color:var(--emerald-400);padding:var(--space-4);text-align:center;font-weight:var(--font-semibold)">🎉 No significant skill gaps! You\'re ready for this role.</div>'}
+
+    ${strong.length ? `
+    <div>
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm);color:var(--emerald-400)">✅ Your Strong Skills</div>
+      <div class="tags-wrap">${strong.map(s=>`<span class="skill-tag emerald">${s.skill} (${s.current}%)</span>`).join('')}</div>
+    </div>` : ''}
+  `;
+}
+
+function renderRadar() {
+  const profile = currentUser.skillProfile || {};
+  const labels = Object.keys(profile).slice(0,8);
+  const data = labels.map(l => profile[l] || 0);
+  if (labels.length >= 3) Charts.drawRadar('radar-chart', labels, data, '#6366f1');
+  else document.getElementById('radar-chart').parentElement.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-icon">📡</div><p>Take assessments to build your skill radar</p></div>`;
+}
+
+function renderCareerMatches() {
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const matches = Recommender.careers(profile, interests, MockData.careerRoles);
+  const el = document.getElementById('career-match-list');
+  el.innerHTML = matches.map((m, i) => `
+    <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);cursor:pointer" onclick="selectTargetRole('${m.id}')">
+      <div style="font-size:18px">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--text-sm);font-weight:var(--font-semibold)">${m.title}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${m.avgSalary}</div>
+      </div>
+      <div class="match-pill ${m.matchScore>=80?'high':m.matchScore>=60?'medium':'low'}">${m.matchScore}%</div>
+    </div>`).join('');
+}
+
+async function loadAISkillDemand() {
+  const result = await AIService.run(() => AIService.getSkillDemand('technology', 'India'));
+  if (!result) return;
+
+  const card = document.getElementById('demand-card');
+  card.style.display = 'block';
+
+  const skills = (result.trending || MockData.skillDemand).slice(0, 10);
+  const labels = skills.map(s => s.skill);
+  const data = skills.map(s => s.demand);
+  const colors = ['#6366f1','#06b6d4','#f59e0b','#10b981','#8b5cf6','#f43f5e','#22d3ee','#fbbf24','#a78bfa','#34d399'];
+
+  setTimeout(() => Charts.drawHorizBar('demand-chart', labels, data, colors), 100);
+  showToast('Industry demand data loaded!', 'success');
+}
+
+async function loadAICareerRec() {
+  openModal('ai-career-modal');
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const education = `${currentUser.department || 'Engineering'} at ${currentUser.institution || 'College'}, ${currentUser.year || ''}`;
+
+  const result = await AIService.run(() => AIService.recommendCareers(profile, interests, education, currentUser.projects || []));
+  if (!result) { closeModal('ai-career-modal'); return; }
+
+  document.getElementById('ai-career-modal-content').innerHTML = `
+    <div style="padding:var(--space-4);background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius-md);margin-bottom:var(--space-5)">
+      <div style="font-size:var(--text-sm);color:var(--indigo-300);margin-bottom:var(--space-2)">💡 Personalized Advice</div>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary)">${result.personalizedAdvice}</p>
+    </div>
+    ${(result.recommendations||[]).map((r, i) => `
+      <div style="padding:var(--space-4);border:1px solid var(--border-primary);border-radius:var(--radius-lg);margin-bottom:var(--space-3);${i===0?'border-color:rgba(99,102,241,0.3);background:rgba(99,102,241,0.05)':''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)">
+          <div style="font-weight:var(--font-bold)">${r.role}</div>
+          <div class="match-pill ${r.match>=80?'high':r.match>=60?'medium':'low'}">${r.match}% match</div>
+        </div>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">${r.description}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3);font-size:var(--text-xs);margin-bottom:var(--space-3)">
+          <div style="color:var(--text-muted)">💰 ${r.avgSalary}</div>
+          <div style="color:var(--text-muted)">📈 ${r.growth}</div>
+          <div style="color:var(--text-muted)">⏱ ${r.timeToReady}</div>
+        </div>
+        ${r.missingSkills?.length ? `<div style="color:var(--rose-400);font-size:var(--text-xs)">Gaps: ${r.missingSkills.join(', ')}</div>` : ''}
+      </div>`).join('')}
+    <div style="margin-top:var(--space-4)">
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm)">⚡ Immediate Actions</div>
+      <ul style="padding-left:var(--space-5);color:var(--text-secondary);font-size:var(--text-sm);display:flex;flex-direction:column;gap:var(--space-2)">${(result.immediateActions||[]).map(a=>`<li>${a}</li>`).join('')}</ul>
+    </div>`;
+}
+</script>
+</body>
+</html>

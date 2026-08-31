@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — SkillBridge Institution</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Institution Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Dashboard</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Overview</a>
+        <a href="analytics.html" class="nav-item active"><span class="nav-icon">📊</span> Analytics</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Insights</span>
+        <a href="#" class="nav-item" onclick="loadAIReport()"><span class="nav-icon">✦</span> AI Analysis</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Detailed Analytics</div>
+      <div class="topbar-actions" style="margin-left:auto;display:flex;gap:var(--space-3)">
+        <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="loadAIReport()">✦ AI Analysis</button>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>📊 Institution Analytics</h1>
+        <p class="subtitle">Deep-dive into skill readiness, placement performance, and industry alignment metrics</p>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="stats-grid stagger" id="kpi-grid"></div>
+
+      <!-- Charts Row 1 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-top:var(--space-6);margin-bottom:var(--space-6)">
+        <div class="card">
+          <div class="card-title mb-4">📈 Placement Trend (Last 7 Months)</div>
+          <canvas id="trend-chart" width="500" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title mb-4">📊 Skill Score Distribution by Department</div>
+          <canvas id="dept-bar-chart" width="500" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)">
+        <div class="card">
+          <div class="card-title mb-4">🔥 Top 12 Industry Skill Demands</div>
+          <canvas id="demand-chart" width="500" height="350"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title mb-4">⚡ Top Skill Gaps (Institution-wide)</div>
+          <div id="gap-chart-container"></div>
+        </div>
+      </div>
+
+      <!-- Full Table -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <div class="card-title">🏛️ Detailed Department Report</div>
+          <button class="btn btn-ghost btn-sm" onclick="exportReport()">📥 Export</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="full-dept-table">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Total Students</th>
+                <th>Assessed</th>
+                <th>Avg Skill Score</th>
+                <th>Placed</th>
+                <th>Placement %</th>
+                <th>Active Internships</th>
+                <th>Skill Readiness</th>
+              </tr>
+            </thead>
+            <tbody id="full-dept-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Industry Partner Performance -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <div class="card-title">🤝 Industry Partner Performance</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Company</th><th>Partnership Type</th><th>Students Engaged</th><th>Impact</th></tr>
+            </thead>
+            <tbody id="collab-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI Analysis Section -->
+      <div id="ai-report-section" style="display:none" class="card">
+        <div class="card-header">
+          <div><div class="ai-badge mb-1">✦ Claude AI</div><div class="card-title">AI-Powered Institutional Analysis</div></div>
+        </div>
+        <div id="ai-report-content"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser;
+const stats = MockData.institutionStats;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('institution');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderKPIs();
+  renderCharts();
+  renderFullTable();
+  renderCollabTable();
+});
+
+function renderKPIs() {
+  const el = document.getElementById('kpi-grid');
+  el.innerHTML = `
+    <div class="stat-card indigo"><div class="stat-value">${stats.totalStudents.toLocaleString()}</div><div class="stat-label">Total Students</div><div class="stat-change positive">+4.5% YoY</div></div>
+    <div class="stat-card cyan"><div class="stat-value">${Math.round(stats.assessedStudents/stats.totalStudents*100)}%</div><div class="stat-label">Assessment Coverage</div><div class="stat-change positive">+12% vs last sem</div></div>
+    <div class="stat-card emerald"><div class="stat-value">${stats.placementRate}%</div><div class="stat-label">Placement Rate</div><div class="stat-change positive">+8% vs last year</div></div>
+    <div class="stat-card amber"><div class="stat-value">${stats.avgSkillScore}%</div><div class="stat-label">Avg Skill Score</div><div class="stat-change neutral">Institute average</div></div>
+    <div class="stat-card rose"><div class="stat-value">${stats.activeInternships}</div><div class="stat-label">Active Internships</div><div class="stat-change positive">+45 this month</div></div>
+    <div class="stat-card indigo"><div class="stat-value">${stats.industryPartners}</div><div class="stat-label">Industry Partners</div><div class="stat-change positive">+12 new this year</div></div>`;
+}
+
+function renderCharts() {
+  const monthly = stats.monthlyPlacements;
+
+  // Placement trend
+  setTimeout(() => {
+    Charts.drawLine('trend-chart', monthly.map(m=>m.month), [
+      { data: monthly.map(m=>m.placements), color:'#6366f1', label:'Placements' }
+    ]);
+  }, 100);
+
+  // Dept bar chart
+  const depts = stats.departmentBreakdown;
+  setTimeout(() => {
+    Charts.drawBar('dept-bar-chart',
+      depts.map(d=>d.dept),
+      depts.map(d=>d.avgScore),
+      ['#6366f1','#06b6d4','#f59e0b','#10b981','#8b5cf6']
+    );
+  }, 120);
+
+  // Demand horizontal bar
+  const skillDemand = MockData.skillDemand;
+  setTimeout(() => {
+    Charts.drawHorizBar('demand-chart',
+      skillDemand.map(s=>s.skill),
+      skillDemand.map(s=>s.demand),
+      ['#6366f1','#06b6d4','#f59e0b','#10b981','#8b5cf6','#f43f5e','#22d3ee','#fbbf24','#a78bfa','#34d399','#fb7185','#93c5fd']
+    );
+  }, 140);
+
+  // Skill gaps
+  const gapEl = document.getElementById('gap-chart-container');
+  const gaps = stats.topSkillGaps;
+  const gapData = [38, 42, 35, 40, 45];
+  gapEl.innerHTML = gaps.map((gap, i) => `
+    <div style="margin-bottom:var(--space-4)">
+      <div class="progress-header">
+        <span style="font-size:var(--text-sm);font-weight:var(--font-medium)">${gap}</span>
+        <span style="font-size:var(--text-sm);color:var(--rose-400)">${gapData[i]}% avg</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill rose" style="width:${gapData[i]}%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:3px">
+        <span>Student average: ${gapData[i]}%</span>
+        <span>Industry need: ~${Math.min(gapData[i]+30, 100)}%</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderFullTable() {
+  const tbody = document.getElementById('full-dept-tbody');
+  tbody.innerHTML = stats.departmentBreakdown.map(d => {
+    const rate = Math.round(d.placed/d.students*100);
+    const assessed = Math.round(d.students * 0.72);
+    const activeInterns = Math.round(d.students * 0.11);
+    return `
+      <tr>
+        <td><strong>${d.dept}</strong></td>
+        <td>${d.students.toLocaleString()}</td>
+        <td>${assessed.toLocaleString()} (${Math.round(assessed/d.students*100)}%)</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <div style="width:50px;height:5px;background:var(--bg-tertiary);border-radius:2px">
+              <div style="width:${d.avgScore}%;height:100%;border-radius:2px;background:${d.avgScore>=70?'var(--emerald-500)':d.avgScore>=55?'var(--cyan-500)':'var(--amber-500)'}"></div>
+            </div>
+            ${d.avgScore}%
+          </div>
+        </td>
+        <td>${d.placed.toLocaleString()}</td>
+        <td><span class="badge badge-${rate>=70?'emerald':rate>=50?'cyan':'amber'}">${rate}%</span></td>
+        <td>${activeInterns}</td>
+        <td><span class="badge badge-${d.avgScore>=70?'emerald':d.avgScore>=55?'cyan':'amber'}">${d.avgScore>=70?'High':d.avgScore>=55?'Moderate':'Needs Focus'}</span></td>
+      </tr>`;
+  }).join('');
+}
+
+function renderCollabTable() {
+  const tbody = document.getElementById('collab-tbody');
+  tbody.innerHTML = stats.industryCollaborations.map(c => `
+    <tr>
+      <td><strong>${c.company}</strong></td>
+      <td><span class="badge badge-indigo">${c.type}</span></td>
+      <td>${c.students} students</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <div style="width:60px;height:5px;background:var(--bg-tertiary);border-radius:2px">
+            <div style="width:${Math.min(c.students/2, 100)}%;height:100%;background:var(--emerald-500);border-radius:2px"></div>
+          </div>
+          <span class="badge badge-emerald">High</span>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadAIReport() {
+  const section = document.getElementById('ai-report-section');
+  section.style.display = 'block';
+  section.scrollIntoView({ behavior:'smooth', block:'start' });
+  document.getElementById('ai-report-content').innerHTML = '<div class="loading-container"><div class="spinner"></div><p class="mt-4">Generating AI analysis…</p></div>';
+
+  const result = await AIService.run(() => AIService.getSkillDemand('technology', 'India'));
+  if (!result) { section.style.display = 'none'; return; }
+
+  document.getElementById('ai-report-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);margin-bottom:var(--space-5)">
+      <div style="padding:var(--space-4);background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius-lg)">
+        <div style="font-weight:var(--font-bold);margin-bottom:var(--space-3);color:var(--indigo-400)">🚀 Emerging Skills to Add</div>
+        <div class="tags-wrap">${(result.emergingSkills||[]).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+      </div>
+      <div style="padding:var(--space-4);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-lg)">
+        <div style="font-weight:var(--font-bold);margin-bottom:var(--space-3);color:var(--emerald-400)">📋 Top Hiring Roles</div>
+        ${(result.topRoles||[]).slice(0,3).map(r=>`<div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">• ${r.title} — ${r.avgSalary}</div>`).join('')}
+      </div>
+    </div>
+    <div style="margin-bottom:var(--space-5)">
+      <div style="font-weight:var(--font-bold);margin-bottom:var(--space-3)">💡 Key Insights</div>
+      ${(result.insights||[]).map(i=>`<div style="padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">→ ${i}</div>`).join('')}
+    </div>
+    <div>
+      <div style="font-weight:var(--font-bold);margin-bottom:var(--space-3)">🎓 Curriculum Recommendations</div>
+      <ul style="padding-left:var(--space-5);font-size:var(--text-sm);color:var(--text-secondary);display:flex;flex-direction:column;gap:var(--space-2)">${(result.recommendations||[]).map(r=>`<li>${r}</li>`).join('')}</ul>
+    </div>`;
+  showToast('AI analysis complete!', 'success');
+}
+
+function exportReport() {
+  const rows = [
+    ['SkillBridge Institution Analytics Report'],
+    ['Generated', new Date().toLocaleDateString('en-IN')],
+    [],
+    ['KPI','Value'],
+    ['Total Students', stats.totalStudents],
+    ['Placement Rate', stats.placementRate + '%'],
+    ['Avg Skill Score', stats.avgSkillScore + '%'],
+    ['Industry Partners', stats.industryPartners],
+    [],
+    ['Department','Students','Avg Score','Placed','Placement %'],
+    ...stats.departmentBreakdown.map(d => [d.dept, d.students, d.avgScore+'%', d.placed, Math.round(d.placed/d.students*100)+'%'])
+  ];
+  const csv = rows.map(r => Array.isArray(r) ? r.join(',') : r).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `skillbridge_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast('Report exported!', 'success');
+}
+</script>
+</body>
+</html>

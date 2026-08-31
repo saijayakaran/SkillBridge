@@ -1,0 +1,350 @@
+/* ================================================
+   SkillBridge — Animations & Transitions
+   ================================================ */
+
+/* ====== Page Enter ====== */
+.page-enter {
+  animation: pageEnter 0.5s ease forwards;
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== Fade ====== */
+.fade-in  { animation: fadeIn  0.5s ease forwards; }
+.fade-out { animation: fadeOut 0.3s ease forwards; }
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ====== Slide ====== */
+.slide-up    { animation: slideUp    0.4s ease forwards; }
+.slide-down  { animation: slideDown  0.4s ease forwards; }
+.slide-left  { animation: slideLeft  0.4s ease forwards; }
+.slide-right { animation: slideRight 0.4s ease forwards; }
+
+@keyframes slideUp    { from { opacity:0; transform:translateY(24px);  } to { opacity:1; transform:translateY(0);  } }
+@keyframes slideDown  { from { opacity:0; transform:translateY(-24px); } to { opacity:1; transform:translateY(0);  } }
+@keyframes slideLeft  { from { opacity:0; transform:translateX(24px);  } to { opacity:1; transform:translateX(0);  } }
+@keyframes slideRight { from { opacity:0; transform:translateX(-24px); } to { opacity:1; transform:translateX(0);  } }
+
+/* ====== Scale ====== */
+.scale-in   { animation: scaleIn  0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.scale-out  { animation: scaleOut 0.2s ease forwards; }
+
+@keyframes scaleIn  { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
+@keyframes scaleOut { from { opacity:1; transform:scale(1);    } to { opacity:0; transform:scale(0.88); } }
+
+/* ====== Stagger Children ====== */
+.stagger > *        { opacity:0; animation: slideUp 0.45s ease forwards; }
+.stagger > *:nth-child(1) { animation-delay:   0ms; }
+.stagger > *:nth-child(2) { animation-delay:  75ms; }
+.stagger > *:nth-child(3) { animation-delay: 150ms; }
+.stagger > *:nth-child(4) { animation-delay: 225ms; }
+.stagger > *:nth-child(5) { animation-delay: 300ms; }
+.stagger > *:nth-child(6) { animation-delay: 375ms; }
+.stagger > *:nth-child(7) { animation-delay: 450ms; }
+.stagger > *:nth-child(8) { animation-delay: 525ms; }
+.stagger > *:nth-child(9) { animation-delay: 600ms; }
+.stagger > *:nth-child(10){ animation-delay: 675ms; }
+
+/* ====== Float ====== */
+.float-slow   { animation: floatSlow  4s ease-in-out infinite; }
+.float-medium { animation: floatMed   3s ease-in-out infinite; }
+.float-fast   { animation: floatFast  2s ease-in-out infinite; }
+
+@keyframes floatSlow  { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-12px); } }
+@keyframes floatMed   { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px);  } }
+@keyframes floatFast  { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px);  } }
+
+/* ====== Pulse ====== */
+.pulse { animation: pulse 2.5s ease-in-out infinite; }
+
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.45; } }
+
+/* ====== Spin ====== */
+.spin  { animation: spin  1s  linear infinite; }
+.spin-slow{ animation: spin 3s linear infinite; }
+
+@keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+/* ====== Ping (live dot) ====== */
+.ping-wrap { position:relative; display:inline-flex; }
+
+.ping-wrap::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:inherit;
+  animation:pingAnim 1.5s ease-out infinite;
+  opacity:0.6;
+}
+
+@keyframes pingAnim {
+  0%   { transform:scale(1);   opacity:0.6; }
+  100% { transform:scale(2.5); opacity:0;   }
+}
+
+/* ====== Shimmer ====== */
+.shimmer { position:relative; overflow:hidden; }
+
+.shimmer::after {
+  content:'';
+  position:absolute;
+  top:0; left:-150%;
+  width:100%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  animation:shimmerMove 2s infinite;
+}
+
+@keyframes shimmerMove { 0%{left:-150%;} 100%{left:150%;} }
+
+/* ====== Gradient Shift ====== */
+.gradient-shift {
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ====== Glow Pulse ====== */
+.glow-indigo { animation: glowIndigo 2.5s ease-in-out infinite; }
+.glow-cyan   { animation: glowCyan   2.5s ease-in-out infinite; }
+.glow-amber  { animation: glowAmber  2.5s ease-in-out infinite; }
+
+@keyframes glowIndigo {
+  0%,100%{ box-shadow:0 0 15px rgba(99,102,241,0.2); }
+  50%    { box-shadow:0 0 35px rgba(99,102,241,0.5); }
+}
+@keyframes glowCyan {
+  0%,100%{ box-shadow:0 0 15px rgba(6,182,212,0.2); }
+  50%    { box-shadow:0 0 35px rgba(6,182,212,0.5); }
+}
+@keyframes glowAmber {
+  0%,100%{ box-shadow:0 0 15px rgba(245,158,11,0.2); }
+  50%    { box-shadow:0 0 35px rgba(245,158,11,0.5); }
+}
+
+/* ====== Number Counter ====== */
+@keyframes countUp {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.counter-anim { animation: countUp 0.5s ease forwards; }
+
+/* ====== Hover Lift ====== */
+.hover-lift {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ====== Underline Sweep ====== */
+.underline-sweep {
+  position: relative;
+  display: inline-block;
+}
+.underline-sweep::after {
+  content:'';
+  position:absolute;
+  bottom:-2px; left:0;
+  width:0; height:2px;
+  background:linear-gradient(90deg, var(--indigo-500), var(--cyan-500));
+  border-radius:2px;
+  transition:width var(--transition-base);
+}
+.underline-sweep:hover::after { width:100%; }
+
+/* ====== Border Glow Ring ====== */
+.glow-ring {
+  position:relative;
+}
+.glow-ring::before {
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:inherit;
+  background:linear-gradient(135deg, var(--indigo-500), var(--cyan-500), var(--indigo-500));
+  background-size:200% 200%;
+  animation:gradientShift 4s linear infinite;
+  z-index:-1;
+}
+
+/* ====== Bounce ====== */
+.bounce { animation:bounceAnim 1.2s ease infinite; }
+
+@keyframes bounceAnim {
+  0%,100%{ transform:translateY(0);     }
+  50%    { transform:translateY(-14px); }
+}
+
+/* ====== Radar Ping (for map/skill icons) ====== */
+.radar {
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.radar::before, .radar::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:rgba(99,102,241,0.3);
+  animation:radarRing 2s ease-out infinite;
+}
+.radar::after { animation-delay:1s; }
+
+@keyframes radarRing {
+  0%   { transform:scale(1);   opacity:0.5; }
+  100% { transform:scale(2.8); opacity:0;   }
+}
+
+/* ====== Typewriter (for hero headings) ====== */
+.typewriter-wrap {
+  display:inline-flex;
+  align-items:center;
+}
+.cursor-blink {
+  width:2px;
+  height:1em;
+  background:var(--indigo-400);
+  display:inline-block;
+  margin-left:3px;
+  animation:cursorBlink 0.8s step-end infinite;
+  vertical-align:text-bottom;
+}
+@keyframes cursorBlink {
+  0%,100%{ opacity:1; }
+  50%    { opacity:0; }
+}
+
+/* ====== Particle (CSS particles for hero) ====== */
+.particle-bg {
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.particle {
+  position:absolute;
+  border-radius:50%;
+  opacity:0;
+  animation:particleFly linear infinite;
+}
+
+@keyframes particleFly {
+  0%   { transform:translateY(100vh) rotate(0deg);   opacity:0; }
+  5%   { opacity:0.6; }
+  95%  { opacity:0.6; }
+  100% { transform:translateY(-100px) rotate(720deg); opacity:0; }
+}
+
+/* ====== Wave ====== */
+@keyframes wave {
+  0%   { transform: rotate(0deg);  }
+  25%  { transform: rotate(15deg); }
+  75%  { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg);  }
+}
+.wave { animation: wave 2s ease-in-out infinite; }
+
+/* ====== Slide in from card ====== */
+@keyframes cardAppear {
+  0%   { opacity:0; transform:translateY(20px) scale(0.96); }
+  100% { opacity:1; transform:translateY(0)    scale(1); }
+}
+
+.card-appear {
+  animation: cardAppear 0.4s ease forwards;
+}
+
+/* ====== Skill bar fill (triggered by JS) ====== */
+.skill-bar-init .progress-fill {
+  width:0 !important;
+}
+
+/* ====== Loading Dots ====== */
+.loading-dots {
+  display:inline-flex;
+  gap:4px;
+  align-items:center;
+}
+
+.loading-dots span {
+  width:6px; height:6px;
+  border-radius:50%;
+  background:currentColor;
+  animation:dotBounce 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2){ animation-delay:0.2s; }
+.loading-dots span:nth-child(3){ animation-delay:0.4s; }
+
+@keyframes dotBounce {
+  0%,80%,100%{ transform:scale(0.6); opacity:0.4; }
+  40%        { transform:scale(1);   opacity:1; }
+}
+
+/* ====== Score Reveal ====== */
+@keyframes scoreReveal {
+  0%   { stroke-dashoffset: 565; }
+  100% { stroke-dashoffset: var(--offset); }
+}
+
+.score-ring-fill {
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  animation: scoreReveal 1.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  animation-delay: 0.3s;
+}
+
+/* ====== Chart Bar Grow ====== */
+@keyframes barGrow {
+  from { transform:scaleY(0); transform-origin:bottom; opacity:0; }
+  to   { transform:scaleY(1); transform-origin:bottom; opacity:1; }
+}
+
+.bar-grow { animation: barGrow 0.6s ease forwards; }
+
+/* ====== Scroll Reveal ====== */
+.reveal { opacity:0; transform:translateY(30px); transition:all 0.6s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+.reveal-left  { opacity:0; transform:translateX(-30px); transition:all 0.6s ease; }
+.reveal-right { opacity:0; transform:translateX(30px);  transition:all 0.6s ease; }
+.reveal-left.visible, .reveal-right.visible { opacity:1; transform:translateX(0); }
+
+/* ====== Hero Gradient Orb ====== */
+.orb {
+  position:absolute;
+  border-radius:50%;
+  filter:blur(80px);
+  pointer-events:none;
+  animation:orbFloat 8s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%,100%{ transform:translate(0,0) scale(1);    }
+  33%    { transform:translate(30px,-20px) scale(1.05); }
+  66%    { transform:translate(-20px,30px) scale(0.95); }
+}
+
+/* ====== Typing cursor for AI output ====== */
+.ai-typing::after {
+  content:'▊';
+  color:var(--indigo-400);
+  animation:cursorBlink 0.8s step-end infinite;
+  margin-left:2px;
+}

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Portfolio — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .portfolio-hero { background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(6,182,212,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius-2xl);padding:var(--space-8);margin-bottom:var(--space-6);position:relative;overflow:hidden; }
+    .portfolio-avatar { width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--indigo-500),var(--cyan-500));display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:var(--font-bold);color:white;border:3px solid rgba(99,102,241,0.4);flex-shrink:0; }
+    .add-card { border:2px dashed var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-2);cursor:pointer;transition:all var(--transition-base);color:var(--text-muted); }
+    .add-card:hover { border-color:var(--indigo-500);color:var(--indigo-400);background:rgba(99,102,241,0.05); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Student Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item active"><span class="nav-icon">🏅</span> My Portfolio</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Digital Portfolio</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <button class="btn btn-ghost btn-sm" onclick="sharePortfolio()">🔗 Share Portfolio</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('edit-profile-modal')">✏️ Edit Profile</button>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <!-- Portfolio Hero -->
+      <div class="portfolio-hero reveal">
+        <div class="orb" style="width:300px;height:300px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent);top:-100px;right:-100px"></div>
+        <div style="display:flex;gap:var(--space-6);align-items:center;flex-wrap:wrap;position:relative;z-index:1">
+          <div class="portfolio-avatar" id="portfolio-avatar"></div>
+          <div style="flex:1">
+            <div id="portfolio-name" style="font-size:var(--text-3xl);font-weight:var(--font-bold);letter-spacing:-0.03em"></div>
+            <div id="portfolio-title" style="color:var(--text-secondary);margin:var(--space-1) 0 var(--space-3)"></div>
+            <div id="portfolio-bio" style="font-size:var(--text-sm);color:var(--text-secondary);max-width:600px;line-height:var(--leading-relaxed)"></div>
+            <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4);flex-wrap:wrap" id="portfolio-tags"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3);text-align:center">
+            <div>
+              <div id="pf-score" style="font-size:var(--text-4xl);font-weight:var(--font-black);font-family:var(--font-heading);letter-spacing:-0.04em;background:linear-gradient(135deg,var(--indigo-400),var(--cyan-400));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">—</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Skill Score</div>
+            </div>
+            <div id="pf-visibility" style="font-size:var(--text-xs);color:var(--emerald-400);display:flex;align-items:center;gap:4px;justify-content:center">
+              🟢 Public Portfolio
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-grid" id="pf-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-6)"></div>
+
+      <!-- Two Column -->
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-6)">
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+          <!-- Skills -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🎯 Assessed Skills</div>
+              <a href="assessment.html" class="btn btn-ghost btn-sm">+ Add Skills</a>
+            </div>
+            <div id="pf-skills"></div>
+          </div>
+
+          <!-- Projects -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💻 Projects</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('add-project-modal')">+ Add Project</button>
+            </div>
+            <div id="pf-projects" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-4)"></div>
+          </div>
+
+          <!-- Experience / Internships -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💼 Experience</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('add-exp-modal')">+ Add</button>
+            </div>
+            <div id="pf-experience"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <!-- Certifications -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏅 Certifications</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('add-cert-modal')">+ Add</button>
+            </div>
+            <div id="pf-certs" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+
+          <!-- Achievements -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏆 Achievements</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('add-ach-modal')">+ Add</button>
+            </div>
+            <div id="pf-achievements" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+
+          <!-- Hackathons -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚡ Hackathons</div>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('add-hack-modal')">+ Add</button>
+            </div>
+            <div id="pf-hackathons" style="display:flex;flex-direction:column;gap:var(--space-2)"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="edit-profile-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Profile</h3>
+      <button class="modal-close" onclick="closeModal('edit-profile-modal')">×</button>
+    </div>
+    <form onsubmit="saveProfile(event)">
+      <div class="form-group">
+        <label class="form-label">Professional Bio</label>
+        <textarea id="edit-bio" class="form-textarea" placeholder="Describe yourself professionally…" style="min-height:100px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Career Interests (comma-separated)</label>
+        <input id="edit-interests" type="text" class="form-input" placeholder="Software Developer, Data Scientist, AI Engineer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">LinkedIn URL</label>
+        <input id="edit-linkedin" type="url" class="form-input" placeholder="https://linkedin.com/in/yourname">
+      </div>
+      <div class="form-group">
+        <label class="form-label">GitHub URL</label>
+        <input id="edit-github" type="url" class="form-input" placeholder="https://github.com/yourhandle">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Portfolio Visibility</label>
+        <select id="edit-visibility" class="form-select">
+          <option value="true">Public (visible to recruiters)</option>
+          <option value="false">Private</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('edit-profile-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="add-project-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Project</h3>
+      <button class="modal-close" onclick="closeModal('add-project-modal')">×</button>
+    </div>
+    <form onsubmit="addProject(event)">
+      <div class="form-group">
+        <label class="form-label">Project Name *</label>
+        <input id="proj-name" type="text" class="form-input" placeholder="e.g. SmartFarm AI" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Technologies (comma-separated) *</label>
+        <input id="proj-tech" type="text" class="form-input" placeholder="React, Python, TensorFlow" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea id="proj-desc" class="form-textarea" placeholder="What does this project do? What problem does it solve?" required style="min-height:80px"></textarea>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">GitHub Link</label>
+          <input id="proj-github" type="url" class="form-input" placeholder="https://github.com/…">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Live Demo</label>
+          <input id="proj-live" type="url" class="form-input" placeholder="https://…">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('add-project-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add Project</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Certification Modal -->
+<div class="modal-overlay" id="add-cert-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Certification</h3>
+      <button class="modal-close" onclick="closeModal('add-cert-modal')">×</button>
+    </div>
+    <form onsubmit="addCert(event)">
+      <div class="form-group">
+        <label class="form-label">Certification Name *</label>
+        <input id="cert-name" type="text" class="form-input" placeholder="e.g. AWS Cloud Practitioner" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('add-cert-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Achievement Modal -->
+<div class="modal-overlay" id="add-ach-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Achievement</h3>
+      <button class="modal-close" onclick="closeModal('add-ach-modal')">×</button>
+    </div>
+    <form onsubmit="addAchievement(event)">
+      <div class="form-group">
+        <label class="form-label">Achievement *</label>
+        <input id="ach-name" type="text" class="form-input" placeholder="e.g. SIH 2025 Finalist" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('add-ach-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Hackathon Modal -->
+<div class="modal-overlay" id="add-hack-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Hackathon</h3>
+      <button class="modal-close" onclick="closeModal('add-hack-modal')">×</button>
+    </div>
+    <form onsubmit="addHackathon(event)">
+      <div class="form-group">
+        <label class="form-label">Hackathon Name *</label>
+        <input id="hack-name" type="text" class="form-input" placeholder="e.g. Smart India Hackathon 2026" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('add-hack-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+let currentUser;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderPortfolio();
+  prefillEditForm();
+});
+
+function renderPortfolio() {
+  const u = currentUser;
+  const profile = u.skillProfile || {};
+  const score = SkillGap.overallScore(profile);
+
+  // Hero
+  document.getElementById('portfolio-avatar').textContent = u.avatar || u.name.charAt(0);
+  document.getElementById('portfolio-name').textContent = u.name;
+  document.getElementById('pf-score').textContent = score ? score + '%' : '—';
+  document.getElementById('portfolio-title').textContent = [u.year, u.department, u.institution].filter(Boolean).join(' · ');
+  document.getElementById('portfolio-bio').textContent = u.portfolio?.bio || 'No bio added yet. Click "Edit Profile" to add one.';
+
+  const interests = u.careerInterests || [];
+  document.getElementById('portfolio-tags').innerHTML = interests.map(i=>`<span class="badge badge-indigo">${i}</span>`).join('') + (u.phone?`<span class="badge badge-gray">📞 ${u.phone}</span>`:'');
+
+  // Stats
+  document.getElementById('pf-stats').innerHTML = `
+    <div class="stat-card indigo"><div class="stat-value">${Object.keys(profile).length}</div><div class="stat-label">Skills Assessed</div></div>
+    <div class="stat-card cyan"><div class="stat-value">${(u.projects||[]).length}</div><div class="stat-label">Projects</div></div>
+    <div class="stat-card amber"><div class="stat-value">${(u.certifications||[]).length}</div><div class="stat-label">Certifications</div></div>
+    <div class="stat-card emerald"><div class="stat-value">${(u.applications||[]).length}</div><div class="stat-label">Applications</div></div>`;
+
+  // Skills
+  const skillsEl = document.getElementById('pf-skills');
+  const skills = u.skills || Object.entries(profile).map(([name,s])=>({name,score:s,verified:false}));
+  skillsEl.innerHTML = skills.length ? skills.map(s => `
+    <div style="margin-bottom:var(--space-3)">
+      <div class="progress-header">
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <span class="progress-name">${s.name}</span>
+          ${s.verified?'<span style="color:var(--emerald-400);font-size:12px" title="Verified">✓</span>':''}
+          <span class="badge ${SkillGap.levelBadge(s.score)}">${SkillGap.levelLabel(s.score)}</span>
+        </div>
+        <span class="progress-pct">${s.score}%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill ${s.score>=80?'emerald':s.score>=55?'cyan':'amber'}" style="width:${s.score}%"></div></div>
+    </div>`).join('') : `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-icon">📊</div><p>No skills assessed yet. <a href="assessment.html">Take an assessment →</a></p></div>`;
+
+  // Projects
+  const projEl = document.getElementById('pf-projects');
+  const projects = u.projects || [];
+  projEl.innerHTML = projects.length ? projects.map(p => `
+    <div class="card card-hover" style="padding:var(--space-4)">
+      <div style="font-weight:var(--font-bold);margin-bottom:var(--space-2)">${p.name}</div>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3);line-height:var(--leading-relaxed)">${App.truncate(p.description||'',100)}</p>
+      <div class="tags-wrap" style="margin-bottom:var(--space-3)">${(p.tech||[]).map(t=>`<span class="skill-tag">${t}</span>`).join('')}</div>
+      <div style="display:flex;gap:var(--space-3)">
+        ${p.github?`<a href="${p.github}" class="btn btn-ghost btn-xs">GitHub</a>`:''}
+        ${p.live?`<a href="${p.live}" class="btn btn-ghost btn-xs">Demo</a>`:''}
+        <button class="btn btn-ghost btn-xs" onclick="removeProject('${p.name}')">Remove</button>
+      </div>
+    </div>`) .join('') + `<div class="add-card" onclick="openModal('add-project-modal')"><div style="font-size:28px">+</div><div style="font-size:var(--text-sm)">Add Project</div></div>` : `<div class="add-card" onclick="openModal('add-project-modal')"><div style="font-size:40px">💻</div><div style="font-weight:var(--font-semibold)">Add your first project</div></div>`;
+
+  // Experience
+  const expEl = document.getElementById('pf-experience');
+  const apps = (u.applications||[]).filter(a=>a.status==='offered'||a.status==='interview');
+  if (apps.length) {
+    expEl.innerHTML = apps.map(a => {
+      const opp = MockData.opportunities.find(o=>o.id===a.opportunityId);
+      return opp ? `
+        <div style="display:flex;gap:var(--space-4);padding:var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-3)">
+          <div style="font-size:32px">${opp.companyLogo}</div>
+          <div>
+            <div style="font-weight:var(--font-semibold)">${opp.title}</div>
+            <div style="color:var(--text-secondary);font-size:var(--text-sm)">${opp.company} · ${opp.location}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px">${App.formatDate(a.appliedAt)} · ${opp.duration}</div>
+          </div>
+        </div>` : '';
+    }).join('');
+  } else {
+    expEl.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-icon">💼</div><p>No experience yet. Get an offer to add it here!</p><a href="opportunities.html" class="btn btn-ghost btn-sm mt-3">Browse Internships</a></div>`;
+  }
+
+  // Certifications
+  const certs = u.certifications || [];
+  document.getElementById('pf-certs').innerHTML = certs.length ? certs.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+      <span style="font-size:20px">🏅</span>
+      <span style="flex:1;font-size:var(--text-sm)">${c}</span>
+      <button onclick="removeCert(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px">×</button>
+    </div>`).join('') + `<button class="btn btn-ghost btn-sm w-full mt-2" onclick="openModal('add-cert-modal')">+ Add Certification</button>` : `<button class="btn btn-ghost btn-sm w-full" onclick="openModal('add-cert-modal')">+ Add Certification</button>`;
+
+  // Achievements
+  const achs = u.achievements || [];
+  document.getElementById('pf-achievements').innerHTML = achs.length ? achs.map((a,i) => `
+    <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+      <span style="font-size:20px">🏆</span>
+      <span style="flex:1;font-size:var(--text-sm)">${a}</span>
+      <button onclick="removeAch(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px">×</button>
+    </div>`).join('') + `<button class="btn btn-ghost btn-sm w-full mt-2" onclick="openModal('add-ach-modal')">+ Add Achievement</button>` : `<button class="btn btn-ghost btn-sm w-full" onclick="openModal('add-ach-modal')">+ Add Achievement</button>`;
+
+  // Hackathons
+  const hacks = u.hackathons || [];
+  document.getElementById('pf-hackathons').innerHTML = hacks.length ? hacks.map((h,i) => `
+    <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+      <span style="font-size:20px">⚡</span>
+      <span style="flex:1;font-size:var(--text-sm)">${h}</span>
+      <button onclick="removeHack(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px">×</button>
+    </div>`).join('') + `<button class="btn btn-ghost btn-sm w-full mt-2" onclick="openModal('add-hack-modal')">+ Add Hackathon</button>` : `<button class="btn btn-ghost btn-sm w-full" onclick="openModal('add-hack-modal')">+ Add Hackathon</button>`;
+}
+
+function prefillEditForm() {
+  document.getElementById('edit-bio').value = currentUser.portfolio?.bio || '';
+  document.getElementById('edit-interests').value = (currentUser.careerInterests||[]).join(', ');
+  document.getElementById('edit-linkedin').value = currentUser.linkedin || '';
+  document.getElementById('edit-github').value = currentUser.github || '';
+  document.getElementById('edit-visibility').value = String(currentUser.portfolio?.visible !== false);
+}
+
+function saveProfile(e) {
+  e.preventDefault();
+  const portfolio = { bio: document.getElementById('edit-bio').value, visible: document.getElementById('edit-visibility').value === 'true' };
+  const careerInterests = document.getElementById('edit-interests').value.split(',').map(s=>s.trim()).filter(Boolean);
+  Auth.updateUser({ id:currentUser.id, portfolio, careerInterests, linkedin:document.getElementById('edit-linkedin').value, github:document.getElementById('edit-github').value });
+  currentUser = Auth.getUser();
+  closeModal('edit-profile-modal');
+  renderPortfolio();
+  showToast('Profile updated!', 'success');
+}
+
+function addProject(e) {
+  e.preventDefault();
+  const projects = [...(currentUser.projects||[]), {
+    name:   document.getElementById('proj-name').value,
+    tech:   document.getElementById('proj-tech').value.split(',').map(t=>t.trim()),
+    description: document.getElementById('proj-desc').value,
+    github: document.getElementById('proj-github').value,
+    live:   document.getElementById('proj-live').value
+  }];
+  Auth.updateUser({ id:currentUser.id, projects });
+  currentUser = Auth.getUser();
+  closeModal('add-project-modal');
+  e.target.reset();
+  renderPortfolio();
+  showToast('Project added!', 'success');
+}
+
+function removeProject(name) {
+  const projects = (currentUser.projects||[]).filter(p=>p.name!==name);
+  Auth.updateUser({ id:currentUser.id, projects });
+  currentUser = Auth.getUser();
+  renderPortfolio();
+}
+
+function addCert(e) {
+  e.preventDefault();
+  const certifications = [...(currentUser.certifications||[]), document.getElementById('cert-name').value];
+  Auth.updateUser({ id:currentUser.id, certifications });
+  currentUser = Auth.getUser();
+  closeModal('add-cert-modal');
+  e.target.reset();
+  renderPortfolio();
+  showToast('Certification added!', 'success');
+}
+
+function removeCert(i) {
+  const certifications = [...(currentUser.certifications||[])];
+  certifications.splice(i, 1);
+  Auth.updateUser({ id:currentUser.id, certifications });
+  currentUser = Auth.getUser();
+  renderPortfolio();
+}
+
+function addAchievement(e) {
+  e.preventDefault();
+  const achievements = [...(currentUser.achievements||[]), document.getElementById('ach-name').value];
+  Auth.updateUser({ id:currentUser.id, achievements });
+  currentUser = Auth.getUser();
+  closeModal('add-ach-modal');
+  e.target.reset();
+  renderPortfolio();
+  showToast('Achievement added!', 'success');
+}
+
+function removeAch(i) {
+  const achievements = [...(currentUser.achievements||[])];
+  achievements.splice(i, 1);
+  Auth.updateUser({ id:currentUser.id, achievements });
+  currentUser = Auth.getUser();
+  renderPortfolio();
+}
+
+function addHackathon(e) {
+  e.preventDefault();
+  const hackathons = [...(currentUser.hackathons||[]), document.getElementById('hack-name').value];
+  Auth.updateUser({ id:currentUser.id, hackathons });
+  currentUser = Auth.getUser();
+  closeModal('add-hack-modal');
+  e.target.reset();
+  renderPortfolio();
+  showToast('Hackathon added!', 'success');
+}
+
+function removeHack(i) {
+  const hackathons = [...(currentUser.hackathons||[])];
+  hackathons.splice(i, 1);
+  Auth.updateUser({ id:currentUser.id, hackathons });
+  currentUser = Auth.getUser();
+  renderPortfolio();
+}
+
+function sharePortfolio() {
+  const url = `${window.location.origin}/portfolio/${currentUser.id}`;
+  navigator.clipboard?.writeText(url).then(() => showToast('Portfolio link copied!', 'success')).catch(() => showToast('Link: ' + url, 'info'));
+}
+</script>
+</body>
+</html>
