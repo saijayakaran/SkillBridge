@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institution Dashboard — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Institution Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Dashboard</span>
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Overview</a>
+        <a href="analytics.html" class="nav-item"><span class="nav-icon">📊</span> Analytics</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Insights</span>
+        <a href="#" class="nav-item" onclick="loadSkillDemandAI()"><span class="nav-icon">✦</span> AI Skill Demand</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Institution Dashboard</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="analytics.html" class="btn btn-primary btn-sm">📊 Full Analytics</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+          <div>
+            <h1 id="inst-welcome">Institution Overview 🏛️</h1>
+            <p class="subtitle" id="inst-sub">Comprehensive skill development and placement analytics</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadSkillDemandAI()">✦ AI Skill Demand Analysis</button>
+        </div>
+      </div>
+
+      <!-- Primary Stats -->
+      <div class="stats-grid stagger" id="inst-stats"></div>
+
+      <!-- Charts + Tables Grid -->
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-6);margin-top:var(--space-6)">
+        <!-- Left -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+          <!-- Placement Trend -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">📈 Monthly Placement Trend</div></div>
+            </div>
+            <canvas id="placement-chart" width="600" height="220"></canvas>
+          </div>
+
+          <!-- Department Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏛️ Department-wise Performance</div>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="data-table" id="dept-table">
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Students</th>
+                    <th>Avg Skill Score</th>
+                    <th>Placed</th>
+                    <th>Placement %</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dept-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Industry Collaborations -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🤝 Industry Collaborations</div>
+            </div>
+            <div id="collab-list" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <!-- Placement Donut -->
+          <div class="card">
+            <div class="card-title mb-4">🎯 Placement Overview</div>
+            <div style="display:flex;justify-content:center">
+              <canvas id="placement-donut" width="240" height="200"></canvas>
+            </div>
+            <div style="display:flex;justify-content:center;gap:var(--space-6);margin-top:var(--space-4)">
+              <div style="text-align:center">
+                <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--emerald-400)" id="placed-num">0</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">Placed</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--rose-400)" id="unplaced-num">0</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted)">Seeking</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Skill Gaps -->
+          <div class="card card-gradient-amber">
+            <div class="card-title mb-4">⚡ Top Skill Gaps (Institution-wide)</div>
+            <div id="skill-gaps-list" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+            <div style="margin-top:var(--space-4);padding:var(--space-3);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-md)">
+              <div style="font-size:var(--text-xs);font-weight:var(--font-semibold);color:var(--amber-400);margin-bottom:var(--space-1)">💡 Curriculum Suggestion</div>
+              <div style="font-size:var(--text-xs);color:var(--text-secondary)">Consider adding Cloud Computing, System Design, and React electives to reduce top skill gaps by an estimated 35%.</div>
+            </div>
+          </div>
+
+          <!-- AI Skill Demand -->
+          <div id="ai-demand-card" style="display:none" class="card">
+            <div class="ai-badge mb-3">✦ Claude AI Analysis</div>
+            <div class="card-title mb-4">Industry Skill Demand</div>
+            <div id="ai-demand-content"></div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-title mb-4">⚡ Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+              <a href="analytics.html" class="btn btn-outline btn-sm w-full">📊 Full Analytics Report</a>
+              <button class="btn btn-outline btn-sm w-full" onclick="exportReport()">📥 Export CSV Report</button>
+              <button class="btn btn-primary btn-sm w-full" onclick="loadSkillDemandAI()">✦ AI Demand Analysis</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser;
+const stats = MockData.institutionStats;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('institution');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  document.getElementById('inst-welcome').textContent = `${currentUser.institution || 'Institution'} Overview 🏛️`;
+  document.getElementById('inst-sub').textContent = `${currentUser.address||''} · Academic Year 2025–26`;
+
+  renderStats();
+  renderCharts();
+  renderDeptTable();
+  renderCollabs();
+  renderSkillGaps();
+});
+
+function renderStats() {
+  const el = document.getElementById('inst-stats');
+  el.innerHTML = `
+    <div class="stat-card indigo"><div class="stat-icon-wrap indigo">👥</div><div class="stat-value" data-count="${stats.totalStudents}">${stats.totalStudents.toLocaleString()}</div><div class="stat-label">Total Students</div><div class="stat-change positive">+124 this year</div></div>
+    <div class="stat-card cyan"><div class="stat-icon-wrap cyan">📊</div><div class="stat-value" data-count="${stats.assessedStudents}">${stats.assessedStudents.toLocaleString()}</div><div class="stat-label">Skill-Assessed</div><div class="stat-change positive">${Math.round(stats.assessedStudents/stats.totalStudents*100)}% of total</div></div>
+    <div class="stat-card emerald"><div class="stat-icon-wrap emerald">🎓</div><div class="stat-value" data-count="${stats.placedStudents}">${stats.placedStudents.toLocaleString()}</div><div class="stat-label">Placed Students</div><div class="stat-change positive">${stats.placementRate}% rate</div></div>
+    <div class="stat-card amber"><div class="stat-icon-wrap amber">🤝</div><div class="stat-value" data-count="${stats.industryPartners}">${stats.industryPartners}</div><div class="stat-label">Industry Partners</div><div class="stat-change positive">+12 new</div></div>`;
+}
+
+function renderCharts() {
+  // Placement trend line chart
+  const monthly = stats.monthlyPlacements;
+  const labels = monthly.map(m=>m.month);
+  const data   = monthly.map(m=>m.placements);
+  setTimeout(() => Charts.drawLine('placement-chart', labels, [{ data, color:'#6366f1', label:'Placements' }]), 100);
+
+  // Placement donut
+  const placed   = stats.placedStudents;
+  const unplaced = stats.totalStudents - placed;
+  document.getElementById('placed-num').textContent = placed.toLocaleString();
+  document.getElementById('unplaced-num').textContent = unplaced.toLocaleString();
+  setTimeout(() => Charts.drawDonut('placement-donut', [stats.placementRate, 100-stats.placementRate], ['Placed','Seeking'], ['#10b981','#1e293b']), 100);
+}
+
+function renderDeptTable() {
+  const tbody = document.getElementById('dept-tbody');
+  tbody.innerHTML = stats.departmentBreakdown.map(d => {
+    const rate = Math.round(d.placed/d.students*100);
+    return `
+      <tr>
+        <td><span style="font-weight:var(--font-semibold)">${d.dept}</span></td>
+        <td>${d.students.toLocaleString()}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <div style="width:60px;height:6px;background:var(--bg-tertiary);border-radius:3px">
+              <div style="width:${d.avgScore}%;height:100%;border-radius:3px;background:${d.avgScore>=70?'var(--emerald-500)':d.avgScore>=55?'var(--cyan-500)':'var(--amber-500)'}"></div>
+            </div>
+            <span>${d.avgScore}%</span>
+          </div>
+        </td>
+        <td>${d.placed.toLocaleString()}</td>
+        <td>
+          <span class="badge badge-${rate>=70?'emerald':rate>=50?'cyan':'amber'}">${rate}%</span>
+        </td>
+        <td>
+          <span class="badge badge-${d.avgScore>=70?'emerald':d.avgScore>=55?'cyan':'amber'}">${d.avgScore>=70?'Excellent':d.avgScore>=55?'Good':'Needs Attention'}</span>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function renderCollabs() {
+  const el = document.getElementById('collab-list');
+  el.innerHTML = stats.industryCollaborations.map(c => `
+    <div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+      <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;font-weight:var(--font-bold);font-size:var(--text-sm);color:var(--indigo-400)">
+        ${c.company.charAt(0)}
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">${c.company}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${c.type} · ${c.students} students</div>
+      </div>
+      <span class="badge badge-${c.type.includes('Placement')?'emerald':c.type.includes('Training')?'cyan':'indigo'}">${c.type}</span>
+    </div>`).join('');
+}
+
+function renderSkillGaps() {
+  const el = document.getElementById('skill-gaps-list');
+  const gaps = stats.topSkillGaps;
+  const gapScores = [38, 42, 35, 40, 45]; // simulated institution-wide averages
+  el.innerHTML = gaps.map((gap, i) => `
+    <div>
+      <div class="progress-header">
+        <span style="font-size:var(--text-sm)">${gap}</span>
+        <span class="badge badge-amber">Gap: ${gapScores[i]}% avg</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill amber" style="width:${gapScores[i]}%"></div></div>
+    </div>`).join('');
+}
+
+async function loadSkillDemandAI() {
+  const card = document.getElementById('ai-demand-card');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior:'smooth', block:'start' });
+  document.getElementById('ai-demand-content').innerHTML = '<div class="loading-container"><div class="spinner"></div><p class="mt-3" style="font-size:var(--text-sm)">Analyzing market…</p></div>';
+
+  const result = await AIService.run(() => AIService.getSkillDemand('technology', 'India'));
+  if (!result) { card.style.display = 'none'; return; }
+
+  const topSkills = (result.trending||MockData.skillDemand).slice(0,6);
+  document.getElementById('ai-demand-content').innerHTML = `
+    <div style="margin-bottom:var(--space-4)">
+      ${topSkills.map(s=>`
+        <div style="margin-bottom:var(--space-3)">
+          <div class="progress-header">
+            <span style="font-size:var(--text-sm)">${s.skill}</span>
+            <div style="display:flex;align-items:center;gap:var(--space-2)">
+              <span style="font-size:10px;color:var(--emerald-400)">${s.growth}</span>
+              <span style="font-size:10px;color:var(--text-muted)">${s.demand}%</span>
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill ${s.demand>=80?'emerald':s.demand>=60?'cyan':'amber'}" style="width:${s.demand}%"></div></div>
+        </div>`).join('')}
+    </div>
+    ${result.emergingSkills?.length ? `
+    <div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-2)">🚀 Emerging Skills</div>
+      <div class="tags-wrap">${result.emergingSkills.map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+    </div>` : ''}`;
+  showToast('AI skill demand analysis loaded!', 'success');
+}
+
+function exportReport() {
+  const rows = [
+    ['Department','Students','Avg Score','Placed','Placement %'],
+    ...stats.departmentBreakdown.map(d => [d.dept, d.students, d.avgScore+'%', d.placed, Math.round(d.placed/d.students*100)+'%'])
+  ];
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'skillbridge_report.csv';
+  a.click();
+  showToast('Report exported!', 'success');
+}
+</script>
+</body>
+</html>

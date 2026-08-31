@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .auth-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left panel */
+    .auth-left {
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(6,182,212,0.06));
+      border-right: 1px solid var(--border-primary);
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-left-orb-1 { width:400px;height:400px;background:radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%);top:-100px;left:-100px; }
+    .auth-left-orb-2 { width:300px;height:300px;background:radial-gradient(circle,rgba(6,182,212,0.15),transparent 70%);bottom:-80px;right:-60px; }
+
+    .auth-left-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .auth-features { margin-top: var(--space-10); }
+
+    .auth-feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-3);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-primary);
+      transition: all var(--transition-base);
+    }
+
+    .auth-feature-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      background: rgba(99,102,241,0.15);
+    }
+
+    /* Right panel */
+    .auth-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+      text-decoration: none;
+    }
+
+    .auth-title {
+      font-size: var(--text-3xl);
+      font-weight: var(--font-bold);
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-2);
+    }
+
+    .auth-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-8);
+    }
+
+    /* Demo login pills */
+    .demo-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+    }
+
+    .demo-pill {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      cursor: pointer;
+      border: 1px solid var(--border-primary);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+      font-family: var(--font-body);
+    }
+
+    .demo-pill:hover { border-color: var(--indigo-500); color: var(--indigo-400); background: rgba(99,102,241,0.08); }
+
+    @media (max-width: 768px) {
+      .auth-layout { grid-template-columns: 1fr; }
+      .auth-left { display: none; }
+      .auth-right { padding: var(--space-6); align-items: flex-start; padding-top: var(--space-12); }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-layout">
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="orb orb auth-left-orb-1"></div>
+      <div class="orb orb auth-left-orb-2"></div>
+      <div class="auth-left-content">
+        <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-8)">
+          <div class="logo-icon">⚡</div>
+          <div>
+            <div class="logo-text" style="font-family:var(--font-heading);font-size:var(--text-xl);font-weight:var(--font-bold);background:linear-gradient(135deg,var(--indigo-300),var(--cyan-300));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">SkillBridge</div>
+            <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase">SIH 2K26</div>
+          </div>
+        </a>
+
+        <div>
+          <h2 style="font-size:var(--text-3xl);font-weight:var(--font-bold);letter-spacing:-0.03em;margin-bottom:var(--space-4)">
+            Welcome back to<br><span class="gradient-text">SkillBridge</span>
+          </h2>
+          <p style="color:var(--text-secondary);font-size:var(--text-base)">
+            Your complete Academia–Industry Collaboration platform. Assess, learn, match, and grow.
+          </p>
+        </div>
+
+        <div class="auth-features stagger">
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">🎯</div>
+            <div>
+              <div style="font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:3px">AI Skill Assessment</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Claude AI generates dynamic, industry-relevant questions for any skill</div>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">💼</div>
+            <div>
+              <div style="font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:3px">Smart Opportunity Matching</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Matched internships and jobs with compatibility scores</div>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="auth-feature-icon">📊</div>
+            <div>
+              <div style="font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:3px">Skill Gap Analysis</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">Pinpoint exactly what to learn for your target career</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <div class="auth-box fade-in">
+        <a href="../index.html" class="auth-logo" style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-8);text-decoration:none">
+          <div class="logo-icon">⚡</div>
+          <div class="logo-text" style="font-family:var(--font-heading);font-size:var(--text-xl);font-weight:var(--font-bold);background:linear-gradient(135deg,var(--indigo-300),var(--cyan-300));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">SkillBridge</div>
+        </a>
+
+        <h1 class="auth-title">Sign in</h1>
+        <p class="auth-subtitle">Don't have an account? <a href="register.html">Create one free</a></p>
+
+        <!-- Demo Quick Login -->
+        <div style="margin-bottom:var(--space-5)">
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-2);font-weight:var(--font-medium)">⚡ Quick Demo Login:</div>
+          <div class="demo-pills">
+            <button class="demo-pill" onclick="fillDemo('student@demo.com','demo123')">🎓 Student</button>
+            <button class="demo-pill" onclick="fillDemo('industry@demo.com','demo123')">🏢 Industry</button>
+            <button class="demo-pill" onclick="fillDemo('academician@demo.com','demo123')">🔬 Academician</button>
+            <button class="demo-pill" onclick="fillDemo('institution@demo.com','demo123')">🏛️ Institution</button>
+          </div>
+        </div>
+
+        <div class="divider-or">or sign in with your account</div>
+
+        <!-- Login Form -->
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <span class="input-icon">✉</span>
+              <input id="login-email" type="email" class="form-input" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;justify-content:space-between">
+              <span>Password <span class="required">*</span></span>
+              <a href="#" style="font-size:var(--text-xs)">Forgot password?</a>
+            </label>
+            <div class="input-with-icon" style="position:relative">
+              <span class="input-icon">🔒</span>
+              <input id="login-password" type="password" class="form-input" placeholder="••••••••" required>
+              <button type="button" id="toggle-pw" onclick="togglePassword()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px">👁</button>
+            </div>
+          </div>
+
+          <div id="login-error" class="form-error" style="display:none;margin-bottom:var(--space-4)"></div>
+
+          <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg">
+            Sign In
+          </button>
+        </form>
+
+        <p style="text-align:center;margin-top:var(--space-6);font-size:var(--text-sm);color:var(--text-muted)">
+          New to SkillBridge? <a href="register.html">Create a free account →</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data/mock-data.js"></script>
+  <script src="../js/modules/core-modules.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.seedDemo();
+      // If already logged in
+      const user = Auth.getUser();
+      if (user) Auth.redirectDashboard(user.role);
+
+      // Demo from URL param
+      if (new URLSearchParams(window.location.search).get('demo')) {
+        fillDemo('student@demo.com', 'demo123');
+      }
+    });
+
+    function fillDemo(email, pw) {
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = pw;
+      document.getElementById('login-email').dispatchEvent(new Event('input'));
+    }
+
+    function togglePassword() {
+      const inp = document.getElementById('login-password');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      btn.classList.add('loading');
+      errEl.style.display = 'none';
+
+      setTimeout(() => {
+        const email = document.getElementById('login-email').value.trim();
+        const pw    = document.getElementById('login-password').value;
+        const result = Auth.login(email, pw);
+
+        if (!result.ok) {
+          btn.classList.remove('loading');
+          errEl.textContent = result.err;
+          errEl.style.display = 'flex';
+          return;
+        }
+
+        showToast('Welcome back, ' + result.user.name + '!', 'success');
+        setTimeout(() => Auth.redirectDashboard(result.user.role), 800);
+      }, 600);
+    }
+  </script>
+</body>
+</html>

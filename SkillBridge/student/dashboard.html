@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-text">SkillBridge</div>
+          <div class="logo-tagline">Student Portal</div>
+        </div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item"><span class="nav-icon">🏅</span> My Portfolio</a>
+        <a href="#" class="nav-item" onclick="openModal('resume-modal')"><span class="nav-icon">📄</span> AI Resume Analysis</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?', () => Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only" style="display:none">☰</button>
+      <div class="topbar-left">
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search skills, jobs, companies…" id="global-search">
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="notif-trigger dropdown-wrap">
+          <button class="btn-icon-only notif-count-wrap" data-dropdown="notif-panel" id="notif-btn">
+            🔔
+            <span class="notif-count" id="notif-count" style="display:none">0</span>
+          </button>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-panel-header">
+              <span style="font-weight:var(--font-semibold);font-size:var(--text-sm)">Notifications</span>
+              <button class="btn btn-xs btn-ghost" onclick="Notifications.markAllRead();Notifications.renderList('notif-list');Notifications.updateBadge()">Mark all read</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+            <div class="notif-panel-footer"><a href="#" style="font-size:var(--text-xs)">View all</a></div>
+          </div>
+        </div>
+        <a href="portfolio.html" class="btn btn-outline btn-sm">🏅 My Portfolio</a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content page-enter">
+      <!-- Welcome Header -->
+      <div class="page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+          <div>
+            <h1 id="welcome-heading">Good morning! 👋</h1>
+            <p class="subtitle" id="welcome-sub">Here's your skill development overview</p>
+          </div>
+          <div style="display:flex;gap:var(--space-3)">
+            <a href="assessment.html" class="btn btn-primary">📝 Take Assessment</a>
+            <a href="resume.html" class="btn btn-outline">📄 Analyze Resume</a>
+            <a href="opportunities.html" class="btn btn-glass">💼 Browse Jobs</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid stagger" id="stats-grid">
+        <div class="stat-card indigo">
+          <div class="stat-icon-wrap indigo">📊</div>
+          <div class="stat-value" data-count="0" id="stat-skill-score">0</div>
+          <div class="stat-label">Overall Skill Score</div>
+          <div class="stat-change neutral" id="stat-skill-level">Not assessed</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-icon-wrap cyan">💼</div>
+          <div class="stat-value" data-count="0" id="stat-match-count">0</div>
+          <div class="stat-label">Matched Opportunities</div>
+          <div class="stat-change positive" id="stat-match-sub">→ View all</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon-wrap amber">📋</div>
+          <div class="stat-value" data-count="0" id="stat-apps">0</div>
+          <div class="stat-label">Applications Sent</div>
+          <div class="stat-change neutral" id="stat-apps-sub">Track status</div>
+        </div>
+        <div class="stat-card emerald">
+          <div class="stat-icon-wrap emerald">🏅</div>
+          <div class="stat-value" data-count="0" id="stat-certs">0</div>
+          <div class="stat-label">Certifications</div>
+          <div class="stat-change positive">Portfolio verified</div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Grid -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:var(--space-6);margin-bottom:var(--space-6)">
+        <!-- Left column -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+
+          <!-- Career Match -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">🎯 Best Career Matches</div><div class="card-subtitle">Based on your skills & interests</div></div>
+              <a href="skill-profile.html" class="btn btn-ghost btn-sm">View Full Analysis →</a>
+            </div>
+            <div id="career-matches"></div>
+          </div>
+
+          <!-- Recommended Opportunities -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">💼 Recommended Opportunities</div><div class="card-subtitle">Matched to your skill profile</div></div>
+              <a href="opportunities.html" class="btn btn-ghost btn-sm">View All →</a>
+            </div>
+            <div id="recommended-opps" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+
+          <!-- Skill Gap Alert -->
+          <div class="card card-gradient-amber">
+            <div class="card-header">
+              <div><div class="card-title">⚡ Priority Skill Gaps</div><div class="card-subtitle">Skills to focus on for your target roles</div></div>
+              <a href="assessment.html" class="btn btn-amber btn-sm">Take Assessment</a>
+            </div>
+            <div id="skill-gap-list" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+
+          <!-- Skill Radar -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📊 Skill Radar</div>
+              <a href="skill-profile.html" class="btn-icon-only sm">→</a>
+            </div>
+            <div style="display:flex;justify-content:center">
+              <canvas id="radar-chart" width="280" height="240"></canvas>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:var(--space-4)">⏱ Recent Activity</div>
+            <div id="recent-activity" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+
+          <!-- Learning Recommended -->
+          <div class="card card-gradient-indigo">
+            <div class="card-title" style="margin-bottom:var(--space-4)">📚 Recommended Learning</div>
+            <div id="learning-list" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+            <a href="#" class="btn btn-outline btn-sm w-full mt-4" onclick="loadAILearning()">✦ Get AI Recommendations</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Programs / Upcoming -->
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🎓 Upcoming Programs & Events</div></div>
+          <a href="opportunities.html#programs" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div id="programs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-4)"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Resume Analysis Modal -->
+<div class="modal-overlay" id="resume-modal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-header">
+      <div><div class="ai-badge" style="margin-bottom:var(--space-2)">✦ Claude AI</div><h3 class="modal-title">AI Resume Analysis</h3></div>
+      <button class="modal-close" onclick="closeModal('resume-modal')">×</button>
+    </div>
+    <div id="resume-upload-section">
+      <div class="file-upload" id="resume-drop" onclick="document.getElementById('resume-file').click()">
+        <div style="font-size:48px;margin-bottom:var(--space-4)">📄</div>
+        <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-2)">Drop your resume here or click to browse</div>
+        <div style="font-size:var(--text-sm);color:var(--text-muted)">Supports PDF, DOC, DOCX, TXT — Max 5MB</div>
+        <input type="file" id="resume-file" accept=".pdf,.doc,.docx,.txt" onchange="handleResumeFile(event)">
+      </div>
+      <div style="margin-top:var(--space-4)">
+        <div class="divider-or">or paste resume text</div>
+        <textarea id="resume-text-input" class="form-textarea" placeholder="Paste your resume text here…" style="min-height:150px"></textarea>
+        <button class="btn btn-primary w-full mt-4" onclick="analyzeResume()">✦ Analyze with AI</button>
+      </div>
+    </div>
+    <div id="resume-result" style="display:none"></div>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser;
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+
+  Auth.renderUserWidget('#sidebar-user-widget');
+  Notifications.renderList('notif-list');
+  Notifications.updateBadge();
+
+  renderWelcome();
+  renderStats();
+  renderCareerMatches();
+  renderRecommendedOpps();
+  renderSkillGaps();
+  renderRadar();
+  renderActivity();
+  renderLearning();
+  renderPrograms();
+});
+
+function renderWelcome() {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('welcome-heading').textContent = `${greeting}, ${currentUser.name.split(' ')[0]}! 👋`;
+  document.getElementById('welcome-sub').textContent = currentUser.careerInterests?.length
+    ? `Targeting: ${currentUser.careerInterests.slice(0,2).join(' & ')}`
+    : 'Complete your profile to get personalized recommendations';
+}
+
+function renderStats() {
+  const profile = currentUser.skillProfile || {};
+  const score = SkillGap.overallScore(profile);
+  const apps = (currentUser.applications || []).length;
+  const certs = (currentUser.certifications || []).length;
+  const opps = SkillGap.matchOpportunities(profile, MockData.opportunities);
+
+  document.getElementById('stat-skill-score').textContent = score || '—';
+  document.getElementById('stat-skill-level').textContent = score ? SkillGap.levelLabel(score) : 'Take an assessment';
+  document.getElementById('stat-match-count').textContent = opps.filter(o => o.matchScore >= 60).length;
+  document.getElementById('stat-apps').textContent = apps;
+  document.getElementById('stat-apps-sub').textContent = apps ? `${(currentUser.applications||[]).filter(a => a.status === 'shortlisted' || a.status === 'interview').length} shortlisted` : 'Apply now';
+  document.getElementById('stat-certs').textContent = certs;
+}
+
+function renderCareerMatches() {
+  const el = document.getElementById('career-matches');
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const matches = Recommender.careers(profile, interests, MockData.careerRoles).slice(0, 3);
+
+  if (!matches.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:var(--space-6)"><div class="empty-icon">🎯</div><p>Complete skill assessments to see career matches</p></div>`;
+    return;
+  }
+
+  el.innerHTML = matches.map((m, i) => `
+    <div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4);background:${i===0?'rgba(99,102,241,0.08)':'var(--bg-card)'};border-radius:var(--radius-md);border:1px solid ${i===0?'rgba(99,102,241,0.2)':'var(--border-primary)'};margin-bottom:var(--space-3)">
+      <div style="font-size:28px">${['🥇','🥈','🥉'][i]}</div>
+      <div style="flex:1">
+        <div style="font-weight:var(--font-semibold);margin-bottom:4px">${m.title}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${m.avgSalary} &nbsp;·&nbsp; ${m.growth}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:var(--space-2)">${m.strongSkills.slice(0,3).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="match-pill ${m.matchScore>=80?'high':m.matchScore>=60?'medium':'low'}">${m.matchScore}% match</div>
+        ${m.missingSkills.length ? `<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Gap: ${m.missingSkills[0]}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function renderRecommendedOpps() {
+  const el = document.getElementById('recommended-opps');
+  const profile = currentUser.skillProfile || {};
+  const opps = Recommender.opportunities(profile, MockData.opportunities, currentUser.careerInterests || []).slice(0, 3);
+
+  el.innerHTML = opps.map(o => `
+    <div class="opp-card" onclick="window.location='opportunities.html'">
+      <div class="opp-card-header">
+        <div class="company-logo-box">${o.companyLogo}</div>
+        <div style="flex:1">
+          <div class="opp-card-title">${o.title}</div>
+          <div class="opp-card-company">${o.company}</div>
+        </div>
+        <div class="match-pill ${o.matchScore>=80?'high':o.matchScore>=60?'medium':'low'}">${o.matchScore}%</div>
+      </div>
+      <div class="opp-meta">
+        <span class="opp-meta-item">📍 ${o.location}</span>
+        <span class="opp-meta-item">⏱ ${o.duration}</span>
+        <span class="opp-meta-item">💰 ${o.stipend || o.salary}</span>
+      </div>
+      <div class="tags-wrap">${(o.skills||[]).slice(0,4).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+      <div class="opp-card-footer">
+        <span class="badge badge-${o.type==='internship'?'indigo':'cyan'}">${o.type}</span>
+        <span style="font-size:var(--text-xs);color:var(--text-muted)">Deadline: ${App.formatDate(o.deadline)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderSkillGaps() {
+  const el = document.getElementById('skill-gap-list');
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const plan = SkillGap.prioritizedLearningPlan(profile, MockData.careerRoles, interests).slice(0, 4);
+
+  if (!plan.length) {
+    el.innerHTML = `<p style="font-size:var(--text-sm);color:var(--text-muted)">Take skill assessments to identify gaps for your career goals.</p>`;
+    return;
+  }
+
+  el.innerHTML = plan.map(g => `
+    <div>
+      <div class="progress-header">
+        <span class="progress-name">${g.skill}</span>
+        <span style="display:flex;gap:var(--space-2);align-items:center">
+          <span class="badge badge-${g.urgency==='High'?'rose':g.urgency==='Medium'?'amber':'cyan'}">${g.urgency}</span>
+          <span class="progress-pct">${g.currentScore}%</span>
+        </span>
+      </div>
+      <div class="progress-track"><div class="progress-fill ${g.currentScore>60?'cyan':'rose'}" data-w="${g.currentScore}" style="width:${g.currentScore}%"></div></div>
+    </div>`).join('');
+}
+
+function renderRadar() {
+  const profile = currentUser.skillProfile || {};
+  const labels = Object.keys(profile).slice(0, 8);
+  const data = labels.map(l => profile[l] || 0);
+  if (labels.length >= 3) Charts.drawRadar('radar-chart', labels, data, '#6366f1');
+  else document.getElementById('radar-chart').parentElement.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="empty-icon">📊</div><p>Take assessments to see your skill radar</p></div>`;
+}
+
+function renderActivity() {
+  const el = document.getElementById('recent-activity');
+  const history = currentUser.assessmentHistory || [];
+  const apps = currentUser.applications || [];
+  const activities = [
+    ...history.slice(0,2).map(a => ({ icon:'📝', text:`Assessment: ${a.skill} — ${a.score}%`, time: a.date })),
+    ...apps.slice(0,2).map(a => { const opp = MockData.opportunities.find(o=>o.id===a.opportunityId); return { icon:'💼', text:`Applied: ${opp?.title||'Opportunity'} — ${a.status}`, time: a.appliedAt }; })
+  ].sort((a,b) => new Date(b.time)-new Date(a.time)).slice(0,5);
+
+  if (!activities.length) {
+    el.innerHTML = `<p style="font-size:var(--text-sm);color:var(--text-muted)">No recent activity. Start by taking an assessment!</p>`;
+    return;
+  }
+
+  el.innerHTML = activities.map(a => `
+    <div style="display:flex;gap:var(--space-3);align-items:center">
+      <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${a.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:var(--text-sm);color:var(--text-secondary)">${a.text}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${App.formatRelativeTime(a.time)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderLearning() {
+  const el = document.getElementById('learning-list');
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const gaps = SkillGap.prioritizedLearningPlan(profile, MockData.careerRoles, interests).slice(0, 3);
+  const courses = Recommender.courses(gaps, MockData.courses).slice(0, 3);
+
+  if (!courses.length) {
+    el.innerHTML = `<p style="font-size:var(--text-sm);color:var(--text-muted)">No recommendations yet. Complete assessments first.</p>`;
+    return;
+  }
+
+  el.innerHTML = courses.map(c => `
+    <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-3);background:rgba(255,255,255,0.03);border-radius:var(--radius-md);border:1px solid var(--border-primary)">
+      <div style="font-size:24px">📚</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--text-sm);font-weight:var(--font-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.title}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${c.provider} · ${c.duration}</div>
+      </div>
+      <span class="badge ${c.free?'badge-emerald':'badge-indigo'}">${c.free?'Free':'Paid'}</span>
+    </div>`).join('');
+}
+
+function renderPrograms() {
+  const el = document.getElementById('programs-grid');
+  el.innerHTML = MockData.programs.slice(0, 4).map(p => `
+    <div class="card card-hover" style="padding:var(--space-4)">
+      <div style="display:flex;gap:var(--space-3);align-items:flex-start;margin-bottom:var(--space-3)">
+        <div style="font-size:28px">${p.companyLogo}</div>
+        <div>
+          <div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">${p.title}</div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted)">${p.company}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-3)">
+        <span class="badge badge-indigo">${p.type}</span>
+        <span class="badge badge-gray">${p.mode}</span>
+        <span class="badge ${p.fee==='Free'?'badge-emerald':'badge-amber'}">${p.fee}</span>
+        ${p.certificate?'<span class="badge badge-cyan">Certificate</span>':''}
+      </div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-3)">${p.description.slice(0,90)}…</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:var(--text-xs);color:var(--text-muted)">Deadline: ${App.formatDate(p.deadline)}</span>
+        <button class="btn btn-primary btn-sm" onclick="showToast('Registered for ${p.title}!','success')">Register</button>
+      </div>
+    </div>`).join('');
+}
+
+async function analyzeResume() {
+  const text = document.getElementById('resume-text-input').value.trim();
+  if (!text) { showToast('Please paste resume text or upload a file', 'warning'); return; }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.textContent = '';
+
+  const result = await AIService.run(() => AIService.analyzeResume(text));
+  btn.classList.remove('loading');
+  btn.textContent = '✦ Analyze with AI';
+
+  if (!result) return;
+
+  // Save analysis
+  Auth.updateUser({ id: currentUser.id, resumeText: text, aiAnalysis: result });
+  currentUser = Auth.getUser();
+
+  // Update skills from AI
+  if (result.skills?.length) {
+    const newProfile = { ...currentUser.skillProfile };
+    result.skills.forEach(s => { if (!newProfile[s.name]) newProfile[s.name] = s.confidence; });
+    Auth.updateUser({ id: currentUser.id, skillProfile: newProfile });
+  }
+
+  // Show result
+  document.getElementById('resume-upload-section').style.display = 'none';
+  const resEl = document.getElementById('resume-result');
+  resEl.style.display = 'block';
+  resEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5)">
+      <div style="text-align:center;padding:var(--space-4);background:rgba(99,102,241,0.08);border-radius:var(--radius-lg)">
+        <div style="font-size:var(--text-4xl);font-weight:var(--font-bold);color:var(--indigo-400)">${result.overallScore}</div>
+        <div style="font-size:var(--text-sm);color:var(--text-muted)">Overall Score</div>
+      </div>
+      <div style="text-align:center;padding:var(--space-4);background:rgba(6,182,212,0.08);border-radius:var(--radius-lg)">
+        <div style="font-size:var(--text-4xl);font-weight:var(--font-bold);color:var(--cyan-400)">${result.atsScore}</div>
+        <div style="font-size:var(--text-sm);color:var(--text-muted)">ATS Score</div>
+      </div>
+    </div>
+    ${result.summary ? `<p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">${result.summary}</p>` : ''}
+    <div style="margin-bottom:var(--space-4)">
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-2);font-size:var(--text-sm)">✓ Extracted Skills</div>
+      <div class="tags-wrap">${(result.skills||[]).map(s=>`<span class="skill-tag ${s.level==='advanced'?'emerald':s.level==='intermediate'?'cyan':''}">${s.name}</span>`).join('')}</div>
+    </div>
+    ${result.suggestions?.length ? `
+    <div style="padding:var(--space-4);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-md)">
+      <div style="font-weight:var(--font-semibold);color:var(--amber-400);margin-bottom:var(--space-3);font-size:var(--text-sm)">⚡ AI Suggestions</div>
+      <ul style="padding-left:var(--space-5);display:flex;flex-direction:column;gap:var(--space-2)">${result.suggestions.map(s=>`<li style="font-size:var(--text-sm);color:var(--text-secondary)">${s}</li>`).join('')}</ul>
+    </div>` : ''}
+    <button class="btn btn-ghost btn-sm mt-4" onclick="document.getElementById('resume-upload-section').style.display='block';document.getElementById('resume-result').style.display='none'">Analyze Another Resume</button>
+  `;
+
+  showToast('Resume analyzed! Skill profile updated.', 'success');
+}
+
+function handleResumeFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('resume-text-input').value = e.target.result;
+    showToast('File loaded! Click Analyze to continue.', 'info');
+  };
+  reader.readAsText(file);
+}
+
+async function loadAILearning() {
+  const profile = currentUser.skillProfile || {};
+  const interests = currentUser.careerInterests || [];
+  const gaps = SkillGap.prioritizedLearningPlan(profile, MockData.careerRoles, interests).map(g => g.skill);
+
+  if (!gaps.length) { showToast('Take assessments first to identify skill gaps', 'info'); return; }
+
+  const btn = event.target;
+  btn.classList.add('loading');
+  btn.textContent = '';
+
+  const result = await AIService.run(() => AIService.recommendLearning(gaps, interests[0]));
+  btn.classList.remove('loading');
+  btn.textContent = '✦ Get AI Recommendations';
+
+  if (!result) return;
+
+  const el = document.getElementById('learning-list');
+  el.innerHTML = (result.plan || []).flatMap(p => p.resources || []).slice(0, 4).map(r => `
+    <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-3);background:rgba(255,255,255,0.03);border-radius:var(--radius-md);border:1px solid var(--border-primary)">
+      <div style="font-size:22px">${r.type==='Certification'?'🏅':r.type==='YouTube'?'▶':r.type==='Workshop'?'🎓':'📚'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--text-sm);font-weight:var(--font-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.title}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${r.provider} · ${r.duration}</div>
+      </div>
+      <span class="badge ${r.free?'badge-emerald':'badge-indigo'}">${r.free?'Free':'Paid'}</span>
+    </div>`).join('');
+
+  showToast('AI learning plan generated!', 'success');
+}
+</script>
+</body>
+</html>

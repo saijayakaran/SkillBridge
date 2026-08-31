@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Applications — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Student Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item active"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item"><span class="nav-icon">🏅</span> My Portfolio</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">My Applications</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="opportunities.html" class="btn btn-primary btn-sm">+ Apply More</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>📋 My Applications</h1>
+        <p class="subtitle">Track the status of all your internship and job applications</p>
+      </div>
+
+      <!-- Status Summary -->
+      <div class="stats-grid stagger" id="app-stats" style="grid-template-columns:repeat(5,1fr)"></div>
+
+      <!-- Filter Pills -->
+      <div style="display:flex;gap:var(--space-3);margin:var(--space-6) 0;flex-wrap:wrap">
+        <div class="tabs-pills" id="status-filter">
+          <div class="tab-pill active" onclick="filterApps('all',this)">All</div>
+          <div class="tab-pill" onclick="filterApps('applied',this)">Applied</div>
+          <div class="tab-pill" onclick="filterApps('shortlisted',this)">Shortlisted</div>
+          <div class="tab-pill" onclick="filterApps('interview',this)">Interview</div>
+          <div class="tab-pill" onclick="filterApps('offered',this)">Offered</div>
+          <div class="tab-pill" onclick="filterApps('rejected',this)">Rejected</div>
+        </div>
+      </div>
+
+      <!-- Application List -->
+      <div id="app-list" style="display:flex;flex-direction:column;gap:var(--space-4)"></div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+let currentUser, statusFilter = 'all';
+
+const STATUS_CONFIG = {
+  applied:     { label:'Applied',     color:'indigo', icon:'📨' },
+  shortlisted: { label:'Shortlisted', color:'cyan',   icon:'⭐' },
+  interview:   { label:'Interview',   color:'amber',  icon:'📞' },
+  offered:     { label:'Offered',     color:'emerald',icon:'🎉' },
+  rejected:    { label:'Rejected',    color:'rose',   icon:'❌' }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderStats();
+  filterApps('all', document.querySelector('.tab-pill.active'));
+});
+
+function renderStats() {
+  const apps = currentUser.applications || [];
+  const statsEl = document.getElementById('app-stats');
+  const counts = { applied:0, shortlisted:0, interview:0, offered:0, rejected:0 };
+  apps.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+
+  statsEl.innerHTML = `
+    <div class="stat-card indigo"><div class="stat-value">${apps.length}</div><div class="stat-label">Total Applied</div></div>
+    <div class="stat-card cyan"><div class="stat-value">${counts.shortlisted}</div><div class="stat-label">Shortlisted</div></div>
+    <div class="stat-card amber"><div class="stat-value">${counts.interview}</div><div class="stat-label">Interviews</div></div>
+    <div class="stat-card emerald"><div class="stat-value">${counts.offered}</div><div class="stat-label">Offers</div></div>
+    <div class="stat-card rose"><div class="stat-value">${counts.rejected}</div><div class="stat-label">Rejected</div></div>`;
+}
+
+function filterApps(status, btn) {
+  statusFilter = status;
+  document.querySelectorAll('#status-filter .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderApps();
+}
+
+function renderApps() {
+  const el = document.getElementById('app-list');
+  const apps = (currentUser.applications || []).filter(a => statusFilter === 'all' || a.status === statusFilter);
+
+  if (!apps.length) {
+    el.innerHTML = `
+      <div class="empty-state" style="padding:var(--space-16)">
+        <div class="empty-icon">📋</div>
+        <h3>${statusFilter === 'all' ? 'No applications yet' : 'No ' + statusFilter + ' applications'}</h3>
+        <p>Start applying to internships and jobs to track them here</p>
+        <a href="opportunities.html" class="btn btn-primary mt-4">Browse Opportunities →</a>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = apps.map(app => {
+    const opp = MockData.opportunities.find(o => o.id === app.opportunityId);
+    if (!opp) return '';
+    const s = STATUS_CONFIG[app.status] || STATUS_CONFIG.applied;
+
+    const steps = ['applied','shortlisted','interview','offered'];
+    const stepIdx = steps.indexOf(app.status);
+
+    return `
+      <div class="card card-hover" style="padding:var(--space-5)">
+        <div style="display:flex;gap:var(--space-4);align-items:flex-start;margin-bottom:var(--space-4)">
+          <div style="font-size:40px">${opp.companyLogo}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+              <div style="font-size:var(--text-lg);font-weight:var(--font-bold)">${opp.title}</div>
+              <span class="badge badge-${s.color}">${s.icon} ${s.label}</span>
+              <span class="badge badge-${opp.type==='internship'?'indigo':'cyan'}">${opp.type}</span>
+            </div>
+            <div style="color:var(--text-secondary);font-size:var(--text-sm)">${opp.company} &nbsp;·&nbsp; ${opp.location} &nbsp;·&nbsp; ${opp.stipend||opp.salary}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:var(--text-xs);color:var(--text-muted)">Applied</div>
+            <div style="font-size:var(--text-sm);color:var(--text-secondary)">${App.formatDate(app.appliedAt)}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px">Updated ${App.formatRelativeTime(app.updatedAt)}</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        ${app.status !== 'rejected' ? `
+        <div style="margin-bottom:var(--space-4)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-2)">
+            ${steps.map((step, i) => `
+              <div style="text-align:center;flex:1">
+                <div style="width:28px;height:28px;border-radius:50%;background:${i<=stepIdx?'var(--indigo-500)':'var(--bg-tertiary)'};display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:12px;border:2px solid ${i<=stepIdx?'var(--indigo-500)':'var(--border-primary)'}">
+                  ${i<stepIdx?'✓':i===stepIdx?'●':''}
+                </div>
+                <div style="font-size:9px;color:${i<=stepIdx?'var(--text-secondary)':'var(--text-muted)'};margin-top:4px;text-transform:capitalize">${step}</div>
+              </div>
+              ${i<steps.length-1?`<div style="flex:1;height:2px;margin-top:13px;background:${i<stepIdx?'var(--indigo-500)':'var(--border-primary)'}"></div>`:''}
+            `).join('')}
+          </div>
+        </div>` : `
+        <div style="padding:var(--space-3);background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--rose-400);margin-bottom:var(--space-4)">
+          ❌ Application was not selected this time. Don't give up — keep applying!
+        </div>`}
+
+        <div style="display:flex;gap:var(--space-3);align-items:center">
+          <div class="tags-wrap flex-1">${(opp.skills||[]).slice(0,4).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+          <button class="btn btn-ghost btn-sm" onclick="withdrawApp('${app.id}')">Withdraw</button>
+          ${app.status==='interview'?`<button class="btn btn-outline btn-sm" onclick="showToast('Interview prep coming soon!','info')">📞 Prep Interview</button>`:''}
+          ${app.status==='offered'?`<button class="btn btn-primary btn-sm" onclick="showToast('Congratulations! Contact company to accept.','success')">🎉 Accept Offer</button>`:''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function withdrawApp(appId) {
+  App.confirm('Withdraw this application?', () => {
+    const apps = (currentUser.applications||[]).filter(a=>a.id!==appId);
+    Auth.updateUser({ id:currentUser.id, applications:apps });
+    currentUser = Auth.getUser();
+    renderStats();
+    renderApps();
+    showToast('Application withdrawn', 'info');
+  });
+}
+</script>
+</body>
+</html>

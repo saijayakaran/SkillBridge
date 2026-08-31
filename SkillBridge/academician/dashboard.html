@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academician Dashboard — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Academician Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="opportunities.html" class="nav-item"><span class="nav-icon">🔬</span> Browse Opportunities</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Tools</span>
+        <a href="#" class="nav-item" onclick="openModal('profile-modal')"><span class="nav-icon">👤</span> Update Profile</a>
+        <a href="#" class="nav-item" onclick="loadAIInsights()"><span class="nav-icon">✦</span> AI Insights</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Academician Dashboard</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="opportunities.html" class="btn btn-primary btn-sm">🔬 Browse Opportunities</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4)">
+          <div>
+            <h1 id="aca-welcome">Welcome! 🔬</h1>
+            <p class="subtitle" id="aca-sub">Discover FDPs, industrial training, consultancy & research opportunities</p>
+          </div>
+          <div style="display:flex;gap:var(--space-3)">
+            <button class="btn btn-outline btn-sm" onclick="loadAIInsights()">✦ AI Career Insights</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid stagger" id="aca-stats"></div>
+
+      <!-- Main Grid -->
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--space-6);margin-top:var(--space-6)">
+        <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+          <!-- Featured Opportunities -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">⭐ Featured Faculty Opportunities</div><div class="card-subtitle">Matched to your expertise</div></div>
+              <a href="opportunities.html" class="btn btn-ghost btn-sm">View All →</a>
+            </div>
+            <div id="featured-opps" style="display:flex;flex-direction:column;gap:var(--space-4)"></div>
+          </div>
+
+          <!-- Research Collaborations -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">🔬 Research Collaboration Opportunities</div></div>
+              <a href="opportunities.html" class="btn btn-ghost btn-sm">View All →</a>
+            </div>
+            <div id="research-opps" style="display:flex;flex-direction:column;gap:var(--space-4)"></div>
+          </div>
+
+          <!-- AI Insights Section -->
+          <div id="ai-insights-section" style="display:none" class="card">
+            <div class="card-header">
+              <div><div class="ai-badge" style="margin-bottom:var(--space-1)">✦ Claude AI</div><div class="card-title">AI Career Insights for Academicians</div></div>
+            </div>
+            <div id="ai-insights-content"></div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <!-- Profile Card -->
+          <div class="card">
+            <div style="text-align:center;margin-bottom:var(--space-4)">
+              <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--amber-500),var(--rose-500));display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:var(--font-bold);color:white;margin:0 auto var(--space-3)" id="aca-avatar"></div>
+              <div id="aca-name" style="font-size:var(--text-lg);font-weight:var(--font-bold)"></div>
+              <div id="aca-designation" style="font-size:var(--text-sm);color:var(--text-secondary)"></div>
+              <div id="aca-institution" style="font-size:var(--text-sm);color:var(--text-muted)"></div>
+            </div>
+            <div id="aca-expertise" style="margin-bottom:var(--space-4)">
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-2)">Expertise Areas</div>
+              <div class="tags-wrap" id="expertise-tags"></div>
+            </div>
+            <div id="aca-publications">
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:var(--space-2)">Publications</div>
+              <div id="pub-list"></div>
+            </div>
+            <button class="btn btn-outline btn-sm w-full mt-4" onclick="openModal('profile-modal')">✏️ Update Profile</button>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card">
+            <div class="card-title mb-4">📊 Industry Connect Stats</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+                <span style="font-size:var(--text-sm)">FDP Applications</span>
+                <span style="font-weight:var(--font-bold);color:var(--indigo-400)">3</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+                <span style="font-size:var(--text-sm)">Saved Opportunities</span>
+                <span style="font-weight:var(--font-bold);color:var(--cyan-400)" id="saved-count">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+                <span style="font-size:var(--text-sm)">Research Interests</span>
+                <span style="font-weight:var(--font-bold);color:var(--amber-400)" id="research-count">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md)">
+                <span style="font-size:var(--text-sm)">Publications</span>
+                <span style="font-weight:var(--font-bold);color:var(--emerald-400)" id="pub-count">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Programs -->
+          <div class="card card-gradient-indigo">
+            <div class="card-title mb-4">🎓 Recommended Programs for You</div>
+            <div id="prog-recs" style="display:flex;flex-direction:column;gap:var(--space-3)"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <h3 class="modal-title">Update Profile</h3>
+      <button class="modal-close" onclick="closeModal('profile-modal')">×</button>
+    </div>
+    <form onsubmit="saveAcaProfile(event)">
+      <div class="form-group">
+        <label class="form-label">Expertise Areas (comma-separated)</label>
+        <input id="edit-expertise" type="text" class="form-input" placeholder="Machine Learning, NLP, Computer Vision">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Research Interests (comma-separated)</label>
+        <input id="edit-research" type="text" class="form-input" placeholder="Explainable AI, Federated Learning">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('profile-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser;
+
+const TYPE_COLORS = { FDP:'indigo', 'Industrial Training':'cyan', Consultancy:'amber', Research:'emerald', Workshop:'rose', 'Guest Lecture':'violet' };
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('academician');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderWelcome();
+  renderStats();
+  renderProfile();
+  renderFeaturedOpps();
+  renderResearchOpps();
+  renderProgRecs();
+});
+
+function renderWelcome() {
+  document.getElementById('aca-welcome').textContent = `Welcome, ${currentUser.name}! 🔬`;
+  document.getElementById('aca-sub').textContent = `${currentUser.designation||'Faculty'} · ${currentUser.department||''} · ${currentUser.institution||''}`;
+}
+
+function renderStats() {
+  const opps = MockData.facultyOpportunities;
+  document.getElementById('aca-stats').innerHTML = `
+    <div class="stat-card indigo"><div class="stat-value">${opps.filter(o=>o.type==='FDP').length}</div><div class="stat-label">FDP Opportunities</div></div>
+    <div class="stat-card cyan"><div class="stat-value">${opps.filter(o=>o.type==='Industrial Training').length}</div><div class="stat-label">Industrial Training</div></div>
+    <div class="stat-card amber"><div class="stat-value">${opps.filter(o=>o.type==='Consultancy').length}</div><div class="stat-label">Consultancy</div></div>
+    <div class="stat-card emerald"><div class="stat-value">${opps.filter(o=>o.type==='Research').length}</div><div class="stat-label">Research Projects</div></div>`;
+}
+
+function renderProfile() {
+  document.getElementById('aca-avatar').textContent = currentUser.avatar || currentUser.name.charAt(0);
+  document.getElementById('aca-name').textContent = currentUser.name;
+  document.getElementById('aca-designation').textContent = currentUser.designation || 'Faculty';
+  document.getElementById('aca-institution').textContent = `${currentUser.department||''} · ${currentUser.institution||''}`;
+
+  const expertise = currentUser.expertise || [];
+  document.getElementById('expertise-tags').innerHTML = expertise.map(e=>`<span class="skill-tag">${e}</span>`).join('') || '<span style="font-size:var(--text-xs);color:var(--text-muted)">No expertise added</span>';
+
+  const pubs = currentUser.publications || [];
+  document.getElementById('pub-list').innerHTML = pubs.slice(0,2).map(p=>`
+    <div style="padding:var(--space-2);background:var(--bg-tertiary);border-radius:var(--radius-sm);margin-bottom:var(--space-2)">
+      <div style="font-size:var(--text-xs);font-weight:var(--font-semibold)">${p.title}</div>
+      <div style="font-size:10px;color:var(--text-muted)">${p.journal} · ${p.year} · ${p.citations} citations</div>
+    </div>`).join('') || '<div style="font-size:var(--text-xs);color:var(--text-muted)">No publications added</div>';
+
+  document.getElementById('saved-count').textContent = (currentUser.savedOpportunities||[]).length;
+  document.getElementById('research-count').textContent = (currentUser.researchInterests||[]).length;
+  document.getElementById('pub-count').textContent = (currentUser.publications||[]).length;
+
+  // Prefill edit form
+  document.getElementById('edit-expertise').value = (currentUser.expertise||[]).join(', ');
+  document.getElementById('edit-research').value = (currentUser.researchInterests||[]).join(', ');
+}
+
+function renderFeaturedOpps() {
+  const el = document.getElementById('featured-opps');
+  const expertise = currentUser.expertise || [];
+  const opps = MockData.facultyOpportunities.filter(o => o.type !== 'Research').slice(0, 4);
+  const saved = currentUser.savedOpportunities || [];
+
+  el.innerHTML = opps.map(o => {
+    const color = TYPE_COLORS[o.type] || 'indigo';
+    const isMatch = expertise.some(e => (o.expertise||[]).some(oe => oe.toLowerCase().includes(e.toLowerCase()) || e.toLowerCase().includes(oe.toLowerCase())));
+
+    return `
+      <div style="padding:var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-lg);border:1px solid ${isMatch?'rgba(99,102,241,0.25)':'var(--border-primary)'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--space-3)">
+          <div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)">
+              <span class="badge badge-${color}">${o.type}</span>
+              ${isMatch?'<span class="badge badge-emerald">✓ Expertise Match</span>':''}
+            </div>
+            <div style="font-weight:var(--font-bold)">${o.title}</div>
+            <div style="font-size:var(--text-sm);color:var(--text-secondary)">${o.organizer}</div>
+          </div>
+          <button onclick="toggleSaveOpp('${o.id}')" style="background:none;border:none;font-size:20px;cursor:pointer;line-height:1">${saved.includes(o.id)?'❤️':'🤍'}</button>
+        </div>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">${App.truncate(o.description,100)}</p>
+        <div class="opp-meta" style="margin-bottom:var(--space-3)">
+          ${o.mode?`<span class="opp-meta-item">📍 ${o.mode}</span>`:''}
+          ${o.duration?`<span class="opp-meta-item">⏱ ${o.duration}</span>`:''}
+          ${o.stipend?`<span class="opp-meta-item">💰 ${o.stipend}</span>`:''}
+          ${o.payment?`<span class="opp-meta-item">💰 ${o.payment}</span>`:''}
+          ${o.honorarium?`<span class="opp-meta-item">💰 ${o.honorarium}</span>`:''}
+          ${o.funding?`<span class="opp-meta-item">💰 ${o.funding}</span>`:''}
+        </div>
+        <div class="tags-wrap" style="margin-bottom:var(--space-3)">${(o.expertise||[]).slice(0,4).map(e=>`<span class="skill-tag">${e}</span>`).join('')}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:var(--text-xs);color:var(--text-muted)">Deadline: ${App.formatDate(o.deadline)}</span>
+          <button class="btn btn-primary btn-sm" onclick="applyOpp('${o.id}','${o.title}')">Apply Now</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderResearchOpps() {
+  const el = document.getElementById('research-opps');
+  const researchOpps = MockData.facultyOpportunities.filter(o => o.type === 'Research');
+  const saved = currentUser.savedOpportunities || [];
+
+  el.innerHTML = researchOpps.map(o => `
+    <div style="padding:var(--space-5);background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(6,182,212,0.04));border:1px solid rgba(16,185,129,0.15);border-radius:var(--radius-xl)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--space-3)">
+        <div>
+          <span class="badge badge-emerald" style="margin-bottom:var(--space-2)">🔬 Research Collaboration</span>
+          <div style="font-size:var(--text-lg);font-weight:var(--font-bold)">${o.title}</div>
+          <div style="color:var(--text-secondary);font-size:var(--text-sm)">${o.organizer}</div>
+        </div>
+        <button onclick="toggleSaveOpp('${o.id}')" style="background:none;border:none;font-size:20px;cursor:pointer;line-height:1">${saved.includes(o.id)?'❤️':'🤍'}</button>
+      </div>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-4)">${o.description}</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-4)">
+        <div style="text-align:center;padding:var(--space-3);background:rgba(255,255,255,0.04);border-radius:var(--radius-md)">
+          <div style="font-size:var(--text-sm);font-weight:var(--font-bold);color:var(--emerald-400)">${o.funding||o.duration}</div>
+          <div style="font-size:10px;color:var(--text-muted)">Funding / Duration</div>
+        </div>
+        <div style="text-align:center;padding:var(--space-3);background:rgba(255,255,255,0.04);border-radius:var(--radius-md)">
+          <div style="font-size:var(--text-sm);font-weight:var(--font-bold);color:var(--cyan-400)">${o.mode||'Hybrid'}</div>
+          <div style="font-size:10px;color:var(--text-muted)">Mode</div>
+        </div>
+        <div style="text-align:center;padding:var(--space-3);background:rgba(255,255,255,0.04);border-radius:var(--radius-md)">
+          <div style="font-size:var(--text-sm);font-weight:var(--font-bold);color:var(--amber-400)">${App.timeUntil(o.deadline)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">Time Left</div>
+        </div>
+      </div>
+      <div class="tags-wrap" style="margin-bottom:var(--space-4)">${(o.expertise||[]).map(e=>`<span class="skill-tag emerald">${e}</span>`).join('')}</div>
+      <div style="display:flex;gap:var(--space-3)">
+        <button class="btn btn-primary flex-1" onclick="applyOpp('${o.id}','${o.title}')">🔬 Submit Proposal</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSaveOpp('${o.id}')">Save</button>
+      </div>
+    </div>`).join('') || '<p style="color:var(--text-muted)">No research opportunities found.</p>';
+}
+
+function renderProgRecs() {
+  const el = document.getElementById('prog-recs');
+  const expertise = currentUser.expertise || [];
+  const progs = MockData.programs.slice(0, 3);
+  el.innerHTML = progs.map(p => `
+    <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-3);background:rgba(255,255,255,0.04);border-radius:var(--radius-md);border:1px solid var(--border-primary)">
+      <div style="font-size:24px">${p.companyLogo}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--text-sm);font-weight:var(--font-semibold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${p.company} · ${p.mode}</div>
+      </div>
+      <span class="badge ${p.fee==='Free'?'badge-emerald':'badge-amber'}">${p.fee}</span>
+    </div>`).join('');
+}
+
+function toggleSaveOpp(id) {
+  const saved = [...(currentUser.savedOpportunities||[])];
+  const idx = saved.indexOf(id);
+  idx>=0 ? saved.splice(idx,1) : saved.push(id);
+  Auth.updateUser({ id:currentUser.id, savedOpportunities:saved });
+  currentUser = Auth.getUser();
+  renderFeaturedOpps();
+  renderResearchOpps();
+  document.getElementById('saved-count').textContent = saved.length;
+  showToast(idx>=0?'Removed from saved':'Opportunity saved!', 'info');
+}
+
+function applyOpp(id, title) {
+  showToast(`Application sent for: ${title}`, 'success');
+  Notifications.add('application', `You applied for: ${title}`);
+}
+
+async function loadAIInsights() {
+  const section = document.getElementById('ai-insights-section');
+  section.style.display = 'block';
+  section.scrollIntoView({ behavior:'smooth', block:'start' });
+  document.getElementById('ai-insights-content').innerHTML = '<div class="loading-container"><div class="spinner"></div><p class="mt-4">Generating insights…</p></div>';
+
+  const expertise = currentUser.expertise || ['Machine Learning'];
+  const result = await AIService.run(() => AIService.getSkillDemand(expertise[0], 'India'));
+  if (!result) { section.style.display = 'none'; return; }
+
+  document.getElementById('ai-insights-content').innerHTML = `
+    <div style="margin-bottom:var(--space-4)">
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm)">📊 Industry Demand for Your Expertise Areas</div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+        ${(result.trending||[]).slice(0,5).map(s=>`
+          <div class="progress-header">
+            <span style="font-size:var(--text-sm)">${s.skill}</span>
+            <span style="font-size:var(--text-xs);color:var(--emerald-400)">${s.growth} growth</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill cyan" style="width:${s.demand}%"></div></div>`).join('')}
+      </div>
+    </div>
+    ${result.insights?.length ? `
+    <div style="margin-bottom:var(--space-4)">
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm)">💡 Industry Insights</div>
+      ${result.insights.slice(0,3).map(i=>`<div style="padding:var(--space-3);background:rgba(255,255,255,0.04);border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">${i}</div>`).join('')}
+    </div>` : ''}
+    ${result.recommendations?.length ? `
+    <div>
+      <div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3);font-size:var(--text-sm)">🎓 Recommendations for Institutions</div>
+      <ul style="padding-left:var(--space-5);font-size:var(--text-sm);color:var(--text-secondary);display:flex;flex-direction:column;gap:var(--space-2)">${result.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>
+    </div>` : ''}`;
+}
+
+function saveAcaProfile(e) {
+  e.preventDefault();
+  const expertise = document.getElementById('edit-expertise').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const researchInterests = document.getElementById('edit-research').value.split(',').map(s=>s.trim()).filter(Boolean);
+  Auth.updateUser({ id:currentUser.id, expertise, researchInterests });
+  currentUser = Auth.getUser();
+  closeModal('profile-modal');
+  renderProfile();
+  showToast('Profile updated!', 'success');
+}
+</script>
+</body>
+</html>

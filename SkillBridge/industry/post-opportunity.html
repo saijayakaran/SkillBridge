@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Opportunity — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .form-section { background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius-xl);padding:var(--space-6);margin-bottom:var(--space-5); }
+    .form-section-title { font-size:var(--text-base);font-weight:var(--font-semibold);margin-bottom:var(--space-5);padding-bottom:var(--space-3);border-bottom:1px solid var(--border-primary);display:flex;align-items:center;gap:var(--space-2); }
+    .skill-req-row { display:flex;gap:var(--space-3);align-items:center;margin-bottom:var(--space-3); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Industry Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Overview</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="post-opportunity.html" class="nav-item active"><span class="nav-icon">➕</span> Post Opportunity</a>
+        <a href="candidates.html" class="nav-item"><span class="nav-icon">👥</span> Browse Candidates</a>
+        <a href="programs.html" class="nav-item"><span class="nav-icon">🎓</span> Programs & Events</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Post Opportunity</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <a href="dashboard.html" class="btn btn-ghost btn-sm">← Back</a>
+      </div>
+    </header>
+
+    <main class="page-content page-enter" style="max-width:800px">
+      <div class="page-header">
+        <h1>➕ Post a New Opportunity</h1>
+        <p class="subtitle">Reach thousands of skill-matched students. Fill in the details below.</p>
+      </div>
+
+      <!-- Type Selector -->
+      <div class="form-section">
+        <div class="form-section-title">📋 Opportunity Type</div>
+        <div style="display:flex;gap:var(--space-4)">
+          <label style="flex:1;padding:var(--space-4);border:2px solid var(--indigo-500);border-radius:var(--radius-lg);cursor:pointer;background:rgba(99,102,241,0.08);display:flex;align-items:center;gap:var(--space-3)">
+            <input type="radio" name="opp-type" value="internship" checked onchange="toggleType('internship')" style="accent-color:var(--indigo-500)">
+            <div><div style="font-weight:var(--font-semibold)">🎓 Internship</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Short-term, 1-6 months</div></div>
+          </label>
+          <label style="flex:1;padding:var(--space-4);border:2px solid var(--border-primary);border-radius:var(--radius-lg);cursor:pointer;display:flex;align-items:center;gap:var(--space-3)">
+            <input type="radio" name="opp-type" value="job" onchange="toggleType('job')" style="accent-color:var(--indigo-500)">
+            <div><div style="font-weight:var(--font-semibold)">💼 Full-time Job</div><div style="font-size:var(--text-xs);color:var(--text-muted)">Permanent employment</div></div>
+          </label>
+        </div>
+      </div>
+
+      <form id="post-form" onsubmit="submitPost(event)">
+        <!-- Basic Info -->
+        <div class="form-section">
+          <div class="form-section-title">📝 Basic Information</div>
+          <div class="form-group">
+            <label class="form-label">Job/Internship Title <span class="required">*</span></label>
+            <input id="opp-title" type="text" class="form-input" placeholder="e.g. Machine Learning Engineer Intern" required>
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Category <span class="required">*</span></label>
+              <select id="opp-category" class="form-select" required>
+                <option value="">Select category</option>
+                <option>Software Engineering</option>
+                <option>Data Science</option>
+                <option>AI/ML</option>
+                <option>Web Development</option>
+                <option>Mobile Development</option>
+                <option>Cloud Computing</option>
+                <option>Cybersecurity</option>
+                <option>DevOps</option>
+                <option>UI/UX Design</option>
+                <option>Business Analysis</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Number of Openings <span class="required">*</span></label>
+              <input id="opp-openings" type="number" class="form-input" placeholder="e.g. 5" min="1" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Job Description <span class="required">*</span></label>
+            <textarea id="opp-desc" class="form-textarea" placeholder="Describe the role, team, and what the candidate will work on…" required style="min-height:120px"></textarea>
+          </div>
+        </div>
+
+        <!-- Location & Duration -->
+        <div class="form-section">
+          <div class="form-section-title">📍 Location & Duration</div>
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label class="form-label">Location <span class="required">*</span></label>
+              <input id="opp-location" type="text" class="form-input" placeholder="e.g. Bangalore / Remote" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Work Mode <span class="required">*</span></label>
+              <select id="opp-mode" class="form-select" required>
+                <option value="">Select mode</option>
+                <option value="On-site">On-site</option>
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row form-row-2">
+            <div class="form-group" id="duration-group">
+              <label class="form-label">Duration <span class="required">*</span></label>
+              <select id="opp-duration" class="form-select" required>
+                <option value="">Select duration</option>
+                <option>1 month</option><option>2 months</option><option>3 months</option>
+                <option>6 months</option><option>1 year</option><option>Full-time</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="comp-label">Stipend / Salary <span class="required">*</span></label>
+              <input id="opp-stipend" type="text" class="form-input" placeholder="e.g. ₹25,000/month or ₹15 LPA" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Application Deadline <span class="required">*</span></label>
+            <input id="opp-deadline" type="date" class="form-input" required>
+          </div>
+        </div>
+
+        <!-- Requirements -->
+        <div class="form-section">
+          <div class="form-section-title">🎯 Skills & Requirements</div>
+          <div class="form-group">
+            <label class="form-label">Required Skills (comma-separated) <span class="required">*</span></label>
+            <input id="opp-skills" type="text" class="form-input" placeholder="e.g. Python, TensorFlow, SQL, REST APIs" required>
+            <div class="form-hint">These will be used for candidate matching</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Eligibility Criteria</label>
+            <input id="opp-eligibility" type="text" class="form-input" placeholder="e.g. B.Tech 3rd/4th year, CSE/IT/ECE">
+          </div>
+
+          <!-- Skill Score Requirements -->
+          <div class="form-group">
+            <label class="form-label">Minimum Skill Score Requirements</label>
+            <div class="form-hint" style="margin-bottom:var(--space-3)">Set minimum score (0-100) required for key skills to filter candidates</div>
+            <div id="skill-req-rows">
+              <div class="skill-req-row">
+                <input type="text" class="form-input" placeholder="Skill name" style="flex:2">
+                <input type="number" class="form-input" placeholder="Min score" min="0" max="100" style="flex:1">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">×</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addSkillReqRow()">+ Add Skill Requirement</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Responsibilities</label>
+            <textarea id="opp-resp" class="form-textarea" placeholder="• Design and implement features&#10;• Code reviews&#10;• Collaborate with teams" style="min-height:100px"></textarea>
+          </div>
+        </div>
+
+        <!-- Selection Process -->
+        <div class="form-section">
+          <div class="form-section-title">📋 Selection Process</div>
+          <div class="form-group">
+            <label class="form-label">Selection Rounds (one per line)</label>
+            <textarea id="opp-process" class="form-textarea" placeholder="Online Assessment&#10;Technical Round 1 (DSA)&#10;Technical Round 2 (System Design)&#10;HR Round" style="min-height:100px"></textarea>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card card-gradient-indigo mb-5" id="preview-card" style="display:none">
+          <div class="card-title mb-4">👁 Preview</div>
+          <div id="preview-content"></div>
+        </div>
+
+        <div style="display:flex;gap:var(--space-4)">
+          <button type="button" class="btn btn-outline flex-1" onclick="previewPost()">👁 Preview</button>
+          <button type="submit" class="btn btn-primary flex-1 btn-lg" id="post-btn">🚀 Post Opportunity</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+let currentUser, oppType = 'internship';
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('industry');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+
+  // Set min deadline to tomorrow
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  document.getElementById('opp-deadline').min = tomorrow;
+
+  // Pre-fill type from URL
+  const type = new URLSearchParams(window.location.search).get('type');
+  if (type === 'job') {
+    document.querySelector('[value="job"]').checked = true;
+    toggleType('job');
+  }
+});
+
+function toggleType(type) {
+  oppType = type;
+  document.querySelectorAll('[name="opp-type"]').forEach(r => {
+    const label = r.closest('label');
+    label.style.borderColor = r.value === type ? 'var(--indigo-500)' : 'var(--border-primary)';
+    label.style.background  = r.value === type ? 'rgba(99,102,241,0.08)' : 'transparent';
+  });
+  document.getElementById('comp-label').textContent = type === 'internship' ? 'Stipend *' : 'Salary *';
+  document.getElementById('opp-stipend').placeholder = type === 'internship' ? '₹25,000/month' : '₹12 – 20 LPA';
+}
+
+function addSkillReqRow() {
+  const row = document.createElement('div');
+  row.className = 'skill-req-row';
+  row.innerHTML = `
+    <input type="text" class="form-input" placeholder="Skill name" style="flex:2">
+    <input type="number" class="form-input" placeholder="Min score" min="0" max="100" style="flex:1">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('skill-req-rows').appendChild(row);
+}
+
+function getSkillRequirements() {
+  const req = {};
+  document.querySelectorAll('#skill-req-rows .skill-req-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const skill = inputs[0].value.trim();
+    const score = parseInt(inputs[1].value);
+    if (skill && score) req[skill] = score;
+  });
+  return req;
+}
+
+function previewPost() {
+  const title = document.getElementById('opp-title').value;
+  const cat   = document.getElementById('opp-category').value;
+  const loc   = document.getElementById('opp-location').value;
+  const mode  = document.getElementById('opp-mode').value;
+  const comp  = document.getElementById('opp-stipend').value;
+  const skills = document.getElementById('opp-skills').value;
+  const desc  = document.getElementById('opp-desc').value;
+
+  const el = document.getElementById('preview-content');
+  el.innerHTML = `
+    <div class="opp-card">
+      <div class="opp-card-header">
+        <div class="company-logo-box">${currentUser.avatar}</div>
+        <div><div class="opp-card-title">${title || 'Title'}</div><div class="opp-card-company">${currentUser.company || currentUser.name}</div></div>
+        <span class="badge badge-indigo">${oppType}</span>
+      </div>
+      <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">${desc ? App.truncate(desc, 120) : 'No description'}</p>
+      <div class="opp-meta">
+        <span class="opp-meta-item">📍 ${loc||'Location'}</span>
+        <span class="opp-meta-item">💰 ${comp||'Compensation'}</span>
+        <span class="opp-meta-item">🏢 ${mode||'Mode'}</span>
+        <span class="opp-meta-item">🏷 ${cat||'Category'}</span>
+      </div>
+      <div class="tags-wrap mt-3">${(skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
+    </div>`;
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('preview-card').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function submitPost(e) {
+  e.preventDefault();
+  const btn = document.getElementById('post-btn');
+  btn.classList.add('loading');
+
+  const resp = document.getElementById('opp-resp').value;
+  const proc = document.getElementById('opp-process').value;
+
+  setTimeout(() => {
+    const newOpp = {
+      id: 'opp_' + Date.now(),
+      type: oppType,
+      title: document.getElementById('opp-title').value,
+      company: currentUser.company || currentUser.name,
+      companyLogo: currentUser.avatar || '🏢',
+      companyId: currentUser.id,
+      location: document.getElementById('opp-location').value,
+      mode: document.getElementById('opp-mode').value,
+      duration: document.getElementById('opp-duration').value,
+      stipend: oppType==='internship' ? document.getElementById('opp-stipend').value : undefined,
+      salary:  oppType==='job'        ? document.getElementById('opp-stipend').value : undefined,
+      skills: document.getElementById('opp-skills').value.split(',').map(s=>s.trim()).filter(Boolean),
+      description: document.getElementById('opp-desc').value,
+      responsibilities: resp.split('\n').map(s=>s.replace(/^•\s*/,'')).filter(Boolean),
+      eligibility: document.getElementById('opp-eligibility').value,
+      openings: parseInt(document.getElementById('opp-openings').value),
+      deadline: document.getElementById('opp-deadline').value + 'T00:00:00Z',
+      postedAt: new Date().toISOString(),
+      requiredSkills: getSkillRequirements(),
+      selectionProcess: proc.split('\n').filter(Boolean),
+      category: document.getElementById('opp-category').value,
+      active: true
+    };
+
+    // Add to global opportunities list
+    MockData.opportunities.push(newOpp);
+
+    // Update user's opportunity list
+    const opportunities = [...(currentUser.opportunities || []), newOpp.id];
+    Auth.updateUser({ id: currentUser.id, opportunities });
+    currentUser = Auth.getUser();
+
+    btn.classList.remove('loading');
+    showToast('Opportunity posted successfully! 🎉', 'success');
+    setTimeout(() => window.location.href = 'dashboard.html', 1200);
+  }, 800);
+}
+</script>
+</body>
+</html>

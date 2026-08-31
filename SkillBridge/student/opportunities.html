@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opportunities — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+  <style>
+    .filter-bar { display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center;padding:var(--space-4);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);margin-bottom:var(--space-5); }
+    .opp-grid  { display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:var(--space-5); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Student Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Main</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="skill-profile.html" class="nav-item"><span class="nav-icon">📊</span> Skill Profile</a>
+        <a href="assessment.html" class="nav-item"><span class="nav-icon">📝</span> Assessments</a>
+        <a href="resume.html" class="nav-item"><span class="nav-icon">📄</span> Resume Analysis</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Opportunities</span>
+        <a href="opportunities.html" class="nav-item active"><span class="nav-icon">💼</span> Browse Opportunities</a>
+        <a href="applications.html" class="nav-item"><span class="nav-icon">📋</span> My Applications</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Profile</span>
+        <a href="portfolio.html" class="nav-item"><span class="nav-icon">🏅</span> My Portfolio</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Browse Opportunities</div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>💼 Internships & Jobs</h1>
+        <p class="subtitle">Opportunities matched to your skill profile. Higher match = better fit.</p>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <div style="position:relative;flex:1;min-width:200px">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-muted)">🔍</span>
+          <input type="text" id="search-input" class="form-input" style="padding-left:36px" placeholder="Search company, role, skills…" oninput="filterOpps()">
+        </div>
+        <select class="form-select" id="type-filter" onchange="filterOpps()" style="width:auto">
+          <option value="all">All Types</option>
+          <option value="internship">Internships</option>
+          <option value="job">Jobs</option>
+        </select>
+        <select class="form-select" id="cat-filter" onchange="filterOpps()" style="width:auto">
+          <option value="all">All Categories</option>
+          <option value="Data Science">Data Science</option>
+          <option value="Web Development">Web Development</option>
+          <option value="AI/ML">AI/ML</option>
+          <option value="Software Engineering">Software Engineering</option>
+          <option value="Cloud Computing">Cloud Computing</option>
+          <option value="Cybersecurity">Cybersecurity</option>
+        </select>
+        <select class="form-select" id="mode-filter" onchange="filterOpps()" style="width:auto">
+          <option value="all">All Modes</option>
+          <option value="Remote">Remote</option>
+          <option value="On-site">On-site</option>
+          <option value="Hybrid">Hybrid</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">Reset</button>
+      </div>
+
+      <!-- Sort Tabs -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)">
+        <div class="tabs-pills">
+          <div class="tab-pill active" id="tab-match" onclick="sortBy('match',this)">Best Match</div>
+          <div class="tab-pill" id="tab-new" onclick="sortBy('new',this)">Newest</div>
+          <div class="tab-pill" id="tab-deadline" onclick="sortBy('deadline',this)">Closing Soon</div>
+          <div class="tab-pill" id="tab-saved" onclick="sortBy('saved',this)">Saved</div>
+        </div>
+        <span id="opp-count" style="font-size:var(--text-sm);color:var(--text-muted)"></span>
+      </div>
+
+      <!-- Opportunities Grid -->
+      <div class="opp-grid stagger" id="opp-grid"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Apply Modal -->
+<div class="modal-overlay" id="apply-modal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <h3 class="modal-title">Apply for <span id="apply-opp-title"></span></h3>
+      <button class="modal-close" onclick="closeModal('apply-modal')">×</button>
+    </div>
+    <div id="apply-opp-details"></div>
+    <form onsubmit="submitApplication(event)">
+      <input type="hidden" id="apply-opp-id">
+      <div class="form-group">
+        <label class="form-label">Cover Letter (Optional)</label>
+        <textarea id="apply-cover" class="form-textarea" placeholder="Why are you interested in this role? What makes you a great fit?" style="min-height:120px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available From</label>
+        <input type="date" id="apply-date" class="form-input">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('apply-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">🚀 Submit Application</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal-box" style="max-width:680px;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h3 class="modal-title" id="detail-title"></h3>
+      <button class="modal-close" onclick="closeModal('detail-modal')">×</button>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ai-service.js"></script>
+<script>
+let currentUser, allOpps = [], sortMode = 'match';
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('student');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  allOpps = Recommender.opportunities(currentUser.skillProfile||{}, MockData.opportunities, currentUser.careerInterests||[]);
+  renderOpps(allOpps);
+});
+
+function filterOpps() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const type = document.getElementById('type-filter').value;
+  const cat  = document.getElementById('cat-filter').value;
+  const mode = document.getElementById('mode-filter').value;
+
+  let filtered = allOpps.filter(o => {
+    const matchQ = !q || o.title.toLowerCase().includes(q) || o.company.toLowerCase().includes(q) || (o.skills||[]).some(s=>s.toLowerCase().includes(q));
+    const matchType = type === 'all' || o.type === type;
+    const matchCat  = cat  === 'all' || o.category === cat;
+    const matchMode = mode === 'all' || (o.mode||'').includes(mode);
+    return matchQ && matchType && matchCat && matchMode;
+  });
+
+  if (sortMode === 'saved') filtered = filtered.filter(o => (currentUser.savedOpportunities||[]).includes(o.id));
+  else if (sortMode === 'new')      filtered.sort((a,b) => new Date(b.postedAt)-new Date(a.postedAt));
+  else if (sortMode === 'deadline') filtered.sort((a,b) => new Date(a.deadline)-new Date(b.deadline));
+
+  renderOpps(filtered);
+}
+
+function sortBy(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.tabs-pills .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterOpps();
+}
+
+function resetFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('type-filter').value = 'all';
+  document.getElementById('cat-filter').value = 'all';
+  document.getElementById('mode-filter').value = 'all';
+  filterOpps();
+}
+
+function renderOpps(opps) {
+  const el = document.getElementById('opp-grid');
+  document.getElementById('opp-count').textContent = `${opps.length} opportunit${opps.length!==1?'ies':'y'}`;
+
+  if (!opps.length) {
+    el.innerHTML = `<div class="empty-state col-span-3" style="padding:var(--space-12)"><div class="empty-icon">💼</div><h3>No opportunities found</h3><p>Try adjusting your filters</p></div>`;
+    return;
+  }
+
+  const saved = currentUser.savedOpportunities || [];
+  const applied = (currentUser.applications||[]).map(a=>a.opportunityId);
+
+  el.innerHTML = opps.map(o => `
+    <div class="opp-card ${o.matchScore>=80?'featured':''}" id="opp-${o.id}">
+      ${o.matchScore>=80?'<div class="featured-ribbon">Top Match</div>':''}
+      <div class="opp-card-header" style="margin-bottom:var(--space-4)">
+        <div class="company-logo-box">${o.companyLogo}</div>
+        <div style="flex:1;min-width:0">
+          <div class="opp-card-title">${o.title}</div>
+          <div class="opp-card-company">${o.company}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:var(--space-1)">
+          <div class="match-pill ${o.matchScore>=80?'high':o.matchScore>=60?'medium':'low'}">${o.matchScore}% match</div>
+          <button onclick="toggleSave('${o.id}',event)" title="${saved.includes(o.id)?'Unsave':'Save'}" style="background:none;border:none;cursor:pointer;font-size:18px;padding:0;line-height:1">${saved.includes(o.id)?'❤️':'🤍'}</button>
+        </div>
+      </div>
+
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3);line-height:var(--leading-relaxed)">${App.truncate(o.description,100)}</p>
+
+      <div class="opp-meta" style="margin-bottom:var(--space-3)">
+        <span class="opp-meta-item">📍 ${o.location}</span>
+        <span class="opp-meta-item">⏱ ${o.duration}</span>
+        <span class="opp-meta-item">💰 ${o.stipend||o.salary}</span>
+        <span class="opp-meta-item">${o.mode==='Remote'?'🏠':o.mode==='Hybrid'?'🔀':'🏢'} ${o.mode}</span>
+      </div>
+
+      <div class="tags-wrap" style="margin-bottom:var(--space-4)">${(o.skills||[]).slice(0,5).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+
+      ${o.skillGaps?.length ? `<div style="font-size:var(--text-xs);color:var(--rose-400);margin-bottom:var(--space-3)">⚡ Skill gaps: ${o.skillGaps.join(', ')}</div>` : ''}
+
+      <div class="opp-card-footer">
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+          <span class="badge badge-${o.type==='internship'?'indigo':'emerald'}">${o.type}</span>
+          <span class="badge badge-gray">${o.category}</span>
+        </div>
+        <span style="font-size:var(--text-xs);color:${new Date(o.deadline)<new Date(Date.now()+7*86400000)?'var(--rose-400)':'var(--text-muted)'}">${App.timeUntil(o.deadline)}</span>
+      </div>
+
+      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+        <button class="btn btn-ghost btn-sm flex-1" onclick="viewDetail('${o.id}')">View Details</button>
+        ${applied.includes(o.id)
+          ? '<button class="btn btn-outline btn-sm flex-1" disabled>✓ Applied</button>'
+          : `<button class="btn btn-primary btn-sm flex-1" onclick="openApplyModal('${o.id}')">Apply Now</button>`}
+      </div>
+    </div>`).join('');
+}
+
+function toggleSave(id, e) {
+  e.stopPropagation();
+  const saved = [...(currentUser.savedOpportunities||[])];
+  const idx = saved.indexOf(id);
+  idx >= 0 ? saved.splice(idx,1) : saved.push(id);
+  Auth.updateUser({ id:currentUser.id, savedOpportunities:saved });
+  currentUser = Auth.getUser();
+  filterOpps();
+  showToast(idx>=0?'Removed from saved':'Saved opportunity!', 'info');
+}
+
+function viewDetail(id) {
+  const o = allOpps.find(op => op.id === id);
+  if (!o) return;
+  document.getElementById('detail-title').textContent = o.title;
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-5);padding:var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-lg)">
+      <div style="font-size:48px">${o.companyLogo}</div>
+      <div>
+        <div style="font-size:var(--text-xl);font-weight:var(--font-bold)">${o.company}</div>
+        <div class="opp-meta">
+          <span class="opp-meta-item">📍 ${o.location}</span>
+          <span class="opp-meta-item">⏱ ${o.duration}</span>
+          <span class="opp-meta-item">💰 ${o.stipend||o.salary}</span>
+          <span class="opp-meta-item">👥 ${o.openings} openings</span>
+        </div>
+      </div>
+      <div class="match-pill ${o.matchScore>=80?'high':o.matchScore>=60?'medium':'low'}" style="margin-left:auto">${o.matchScore}% match</div>
+    </div>
+    <h4 style="margin-bottom:var(--space-3)">About this ${o.type}</h4>
+    <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-5);line-height:var(--leading-relaxed)">${o.description}</p>
+    ${o.responsibilities?.length ? `
+    <h4 style="margin-bottom:var(--space-3)">Responsibilities</h4>
+    <ul style="padding-left:var(--space-5);font-size:var(--text-sm);color:var(--text-secondary);display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-5)">${o.responsibilities.map(r=>`<li>${r}</li>`).join('')}</ul>` : ''}
+    <h4 style="margin-bottom:var(--space-3)">Required Skills</h4>
+    <div class="tags-wrap" style="margin-bottom:var(--space-5)">${(o.skills||[]).map(s => {
+      const score = (currentUser.skillProfile||{})[s] || 0;
+      const needed = (o.requiredSkills||{})[s] || 70;
+      const ok = score >= needed;
+      return `<span class="skill-tag ${ok?'emerald':'rose'}" title="${ok?'You have this!':'Skill gap: you have '+score+'%, need '+needed+'%'}">${s} ${ok?'✓':'⚠'}</span>`;
+    }).join('')}</div>
+    ${o.eligibility ? `<div style="padding:var(--space-4);background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius-md);font-size:var(--text-sm);margin-bottom:var(--space-5)">📋 <strong>Eligibility:</strong> ${o.eligibility}</div>` : ''}
+    ${o.selectionProcess?.length ? `
+    <h4 style="margin-bottom:var(--space-3)">Selection Process</h4>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-5)">${o.selectionProcess.map((s,i)=>`<span style="padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);background:var(--bg-tertiary);font-size:var(--text-xs)"><strong>${i+1}.</strong> ${s}</span>`).join('')}</div>` : ''}
+    <div style="display:flex;gap:var(--space-3)">
+      <button class="btn btn-primary flex-1" onclick="closeModal('detail-modal');openApplyModal('${o.id}')">🚀 Apply Now</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleSave('${o.id}',event)">❤ Save</button>
+    </div>`;
+  openModal('detail-modal');
+}
+
+function openApplyModal(id) {
+  const o = allOpps.find(op=>op.id===id);
+  if (!o) return;
+  document.getElementById('apply-opp-id').value = id;
+  document.getElementById('apply-opp-title').textContent = o.title + ' at ' + o.company;
+  document.getElementById('apply-opp-details').innerHTML = `
+    <div style="display:flex;gap:var(--space-3);align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-5)">
+      <span style="font-size:28px">${o.companyLogo}</span>
+      <div>
+        <div style="font-size:var(--text-sm);font-weight:var(--font-semibold)">${o.company} — ${o.location}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted)">${o.stipend||o.salary} · ${o.duration}</div>
+      </div>
+      <div class="match-pill ${o.matchScore>=80?'high':'medium'}" style="margin-left:auto">${o.matchScore}%</div>
+    </div>`;
+  openModal('apply-modal');
+}
+
+function submitApplication(e) {
+  e.preventDefault();
+  const id = document.getElementById('apply-opp-id').value;
+  const opp = allOpps.find(o=>o.id===id);
+
+  const app = {
+    id: 'app_'+Date.now(),
+    opportunityId: id,
+    type: opp?.type || 'internship',
+    status: 'applied',
+    appliedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    coverLetter: document.getElementById('apply-cover').value
+  };
+
+  const applications = [...(currentUser.applications||[]), app];
+  Auth.updateUser({ id:currentUser.id, applications });
+  currentUser = Auth.getUser();
+
+  Notifications.add('application', `Application submitted for ${opp?.title} at ${opp?.company}`);
+  closeModal('apply-modal');
+  filterOpps();
+  showToast(`Applied to ${opp?.title}! 🎉`, 'success');
+}
+</script>
+</body>
+</html>

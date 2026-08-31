@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programs & Events — SkillBridge</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" style="text-decoration:none;display:flex;align-items:center;gap:var(--space-3)">
+        <div class="logo-icon">⚡</div>
+        <div><div class="logo-text">SkillBridge</div><div class="logo-tagline">Industry Portal</div></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Overview</span>
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="post-opportunity.html" class="nav-item"><span class="nav-icon">➕</span> Post Opportunity</a>
+        <a href="candidates.html" class="nav-item"><span class="nav-icon">👥</span> Browse Candidates</a>
+        <a href="programs.html" class="nav-item active"><span class="nav-icon">🎓</span> Programs & Events</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user-widget" onclick="App.confirm('Sign out?',()=>Auth.logout())"></div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button id="sidebar-toggle" class="btn-icon-only">☰</button>
+      <div class="topbar-title">Programs & Events</div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="openModal('create-prog-modal')">+ Create Program</button>
+      </div>
+    </header>
+
+    <main class="page-content page-enter">
+      <div class="page-header">
+        <h1>🎓 Programs & Events</h1>
+        <p class="subtitle">Manage workshops, bootcamps, hackathons, mentorship programs, and certifications offered by your company.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid stagger" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-6)">
+        <div class="stat-card indigo"><div class="stat-value" id="prog-total">0</div><div class="stat-label">Total Programs</div></div>
+        <div class="stat-card cyan"><div class="stat-value" id="prog-active">0</div><div class="stat-label">Active Programs</div></div>
+        <div class="stat-card amber"><div class="stat-value" id="prog-registrations">0</div><div class="stat-label">Total Registrations</div></div>
+        <div class="stat-card emerald"><div class="stat-value" id="prog-cert">0</div><div class="stat-label">With Certificate</div></div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-5);flex-wrap:wrap">
+        <div class="tabs-pills" id="prog-type-filter">
+          <div class="tab-pill active" onclick="filterProgs('all',this)">All</div>
+          <div class="tab-pill" onclick="filterProgs('workshop',this)">Workshops</div>
+          <div class="tab-pill" onclick="filterProgs('certification',this)">Certifications</div>
+          <div class="tab-pill" onclick="filterProgs('mentorship',this)">Mentorship</div>
+          <div class="tab-pill" onclick="filterProgs('challenge',this)">Challenges</div>
+        </div>
+      </div>
+
+      <!-- Programs Grid -->
+      <div id="progs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-5)"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Create Program Modal -->
+<div class="modal-overlay" id="create-prog-modal">
+  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h3 class="modal-title">Create New Program</h3>
+      <button class="modal-close" onclick="closeModal('create-prog-modal')">×</button>
+    </div>
+    <form onsubmit="createProgram(event)">
+      <div class="form-group">
+        <label class="form-label">Program Title *</label>
+        <input id="prog-title" type="text" class="form-input" placeholder="e.g. AI Development Bootcamp" required>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">Program Type *</label>
+          <select id="prog-type" class="form-select" required>
+            <option value="workshop">Workshop</option>
+            <option value="certification">Certification</option>
+            <option value="mentorship">Mentorship</option>
+            <option value="challenge">Hackathon/Challenge</option>
+            <option value="bootcamp">Bootcamp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mode *</label>
+          <select id="prog-mode" class="form-select" required>
+            <option>Online</option><option>On-site</option><option>Hybrid</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea id="prog-desc" class="form-textarea" placeholder="What will participants learn and gain from this program?" required style="min-height:100px"></textarea>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">Duration *</label>
+          <input id="prog-duration" type="text" class="form-input" placeholder="e.g. 4 weeks" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fee</label>
+          <input id="prog-fee" type="text" class="form-input" placeholder="Free or ₹XXXX">
+        </div>
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input id="prog-start" type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Registration Deadline</label>
+          <input id="prog-deadline" type="date" class="form-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Skills Covered (comma-separated)</label>
+        <input id="prog-skills" type="text" class="form-input" placeholder="Python, Machine Learning, TensorFlow">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Maximum Seats</label>
+        <input id="prog-seats" type="number" class="form-input" placeholder="e.g. 100" min="1">
+      </div>
+      <div class="form-row form-row-2">
+        <div class="form-checkbox">
+          <input type="checkbox" id="prog-cert-check" checked>
+          <label for="prog-cert-check">Provide Certificate</label>
+        </div>
+        <div class="form-checkbox">
+          <input type="checkbox" id="prog-mentor-check">
+          <label for="prog-mentor-check">Includes Mentorship</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('create-prog-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">🚀 Create Program</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/data/mock-data.js"></script>
+<script src="../js/modules/core-modules.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+let currentUser, progFilter = 'all';
+
+const TYPE_ICONS = { workshop:'🎓', certification:'🏅', mentorship:'🤝', challenge:'⚡', bootcamp:'🚀', default:'📚' };
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentUser = Auth.requireRole('industry');
+  if (!currentUser) return;
+  Auth.renderUserWidget('#sidebar-user-widget');
+  renderStats();
+  renderPrograms();
+});
+
+function renderStats() {
+  const progs = MockData.programs;
+  const now = new Date();
+  document.getElementById('prog-total').textContent = progs.length;
+  document.getElementById('prog-active').textContent = progs.filter(p => new Date(p.deadline) > now).length;
+  document.getElementById('prog-registrations').textContent = progs.reduce((s,p) => s + (p.openings - (p.openings * 0.3 | 0)), 0);
+  document.getElementById('prog-cert').textContent = progs.filter(p=>p.certificate).length;
+}
+
+function filterProgs(type, btn) {
+  progFilter = type;
+  document.querySelectorAll('#prog-type-filter .tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPrograms();
+}
+
+function renderPrograms() {
+  const el = document.getElementById('progs-grid');
+  const now = new Date();
+  let progs = progFilter==='all' ? MockData.programs : MockData.programs.filter(p=>p.type===progFilter);
+
+  if (!progs.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:var(--space-12)"><div class="empty-icon">🎓</div><h3>No programs found</h3><p>Create your first program to engage with students</p></div>`;
+    return;
+  }
+
+  el.innerHTML = progs.map(p => {
+    const isActive = new Date(p.deadline) > now;
+    const icon = TYPE_ICONS[p.type] || TYPE_ICONS.default;
+    const registrations = Math.floor(p.openings * 0.7); // simulated
+
+    return `
+      <div class="card card-hover" style="padding:var(--space-5)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--space-4)">
+          <div style="display:flex;align-items:center;gap:var(--space-3)">
+            <div style="width:48px;height:48px;border-radius:var(--radius-lg);background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;font-size:24px">${icon}</div>
+            <div>
+              <div style="font-weight:var(--font-bold);font-size:var(--text-base)">${p.title}</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted)">${p.company}</div>
+            </div>
+          </div>
+          <span class="badge ${isActive?'badge-emerald':'badge-gray'}">${isActive?'Active':'Closed'}</span>
+        </div>
+
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-4);line-height:var(--leading-relaxed)">${App.truncate(p.description, 100)}</p>
+
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-4)">
+          <span class="badge badge-indigo">${p.type}</span>
+          <span class="badge badge-gray">${p.mode}</span>
+          <span class="badge ${p.fee==='Free'?'badge-emerald':'badge-amber'}">${p.fee||'Free'}</span>
+          ${p.certificate?'<span class="badge badge-cyan">📜 Certificate</span>':''}
+          ${p.mentorship?'<span class="badge badge-rose">🤝 Mentorship</span>':''}
+          ${p.prize?`<span class="badge badge-amber">🏆 ${p.prize}</span>`:''}
+        </div>
+
+        <div class="tags-wrap" style="margin-bottom:var(--space-4)">${(p.skills||[]).slice(0,4).map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div>
+
+        <!-- Registration Progress -->
+        <div style="margin-bottom:var(--space-4)">
+          <div class="progress-header">
+            <span style="font-size:var(--text-xs);color:var(--text-muted)">Registrations: ${registrations} / ${p.openings}</span>
+            <span style="font-size:var(--text-xs);color:var(--text-muted)">${Math.round(registrations/p.openings*100)}% filled</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill ${registrations/p.openings>0.8?'rose':'cyan'}" style="width:${Math.round(registrations/p.openings*100)}%"></div></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted)">⏱ ${p.duration}</div>
+            <div style="font-size:var(--text-xs);color:${isActive?'var(--text-muted)':'var(--rose-400)'}">Deadline: ${App.formatDate(p.deadline)}</div>
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            <button class="btn btn-ghost btn-sm" onclick="showToast('Analytics coming soon','info')">📊 Analytics</button>
+            <button class="btn btn-outline btn-sm" onclick="showToast('Program editing coming soon','info')">Edit</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function createProgram(e) {
+  e.preventDefault();
+  const newProg = {
+    id: 'prog_' + Date.now(),
+    type: document.getElementById('prog-type').value,
+    title: document.getElementById('prog-title').value,
+    company: currentUser.company || currentUser.name,
+    companyLogo: currentUser.avatar || '🏢',
+    mode: document.getElementById('prog-mode').value,
+    duration: document.getElementById('prog-duration').value,
+    fee: document.getElementById('prog-fee').value || 'Free',
+    skills: (document.getElementById('prog-skills').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    description: document.getElementById('prog-desc').value,
+    startDate: document.getElementById('prog-start').value + 'T00:00:00Z',
+    deadline: document.getElementById('prog-deadline').value + 'T00:00:00Z',
+    openings: parseInt(document.getElementById('prog-seats').value) || 100,
+    certificate: document.getElementById('prog-cert-check').checked,
+    mentorship: document.getElementById('prog-mentor-check').checked,
+    category: 'General',
+    active: true
+  };
+
+  MockData.programs.push(newProg);
+  closeModal('create-prog-modal');
+  e.target.reset();
+  renderStats();
+  renderPrograms();
+  showToast('Program created successfully! 🎉', 'success');
+}
+</script>
+</body>
+</html>
